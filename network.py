@@ -1,6 +1,8 @@
 import numpy as np
 import csv
 from sklearn.model_selection import train_test_split
+from acc_calc import accuracy
+
 
 class Helper:
     """
@@ -267,11 +269,43 @@ if __name__ == "__main__":
     #Get 50% 50% split of remaining val data
     # test_data, val_data , test_labels, val_labels = train-test_split(y_data, y_labels, testsize= 0.5 , random_state = 42)
 
+    
+    #Perform a search of the values accross number of nodes and check using the val dataset to find
+    #the best set of accuracy, Trying differnt activation as well as hidden number of nodes 
+    #Omitting k fold cross validation for  the dataset as well. 
+    result = []
+    net_weights = []
+    hidden_num_list = [20, 30, 40 ,50 ,60, 70, 80]
+    activation_list = [Neuron.sigmoid, Neuron.tanh]
 
-    # predictions = net.run_inference('train_data.csv')
-    # print('Predictions: ', predictions)
-    #TODO load data
-    #TODO split train/val/test
-    #TODO call train
-    #TODO call val
-    #TODO call test
+    for item in hidden_num_list:
+        for active_fn in activation_list:
+
+            #Create a MLP network with teh given parameters we'd like to try
+            net = Network(
+                 n_inputs=784,
+                 n_hidden=item,
+                 n_outputs=4,
+                 activation_fn=
+            )           
+
+            #Perform a training sequence on the input data and the given labels
+            net.train(train_data, train_labels)
+
+            #Log accuracy from the given run after training and run a feedforward test using the validation data for this given
+            #run.
+            result.append(net.feedforward(val_data, val_labels))
+        
+    #Use the best result accuracy on the data itself
+    net = Network(
+         n_inputs=784,
+         n_hidden=best_hidden,
+         n_outputs=4,
+         activation_fn=best_activation
+    )           
+
+
+    predictions = net.inference(test_data)
+    print('Predictions: ', predictions)
+
+
