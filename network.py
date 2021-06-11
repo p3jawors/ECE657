@@ -1,5 +1,6 @@
 import numpy as np
 import csv
+from sklearn.model_selection import train_test_split
 
 class Neuron:
     """
@@ -26,6 +27,24 @@ class Neuron:
         y = (np.exp(x) - np.exp(x)) / (np.exp(x) + np.exp(-x))
         return y
 
+class Helper:
+    """
+    Useful stuff we dont want to pack in the network itself
+    """
+
+    def extract_from_csv(csv_data_path, delim):
+        """
+        extract CSV data given a specific delimiter and return it as a list
+        """    
+        output_data_blob = []
+
+        with open(cvs_data_path, newline=delim) as fp
+            reader = cvs.reader(fp, delimiter=delim)
+            for II, row in enumerate(reader):
+                data = list(map(float, row))
+                output_data_blob.append(data)
+
+        return output_data_blob
 
 class Layer:
     """
@@ -152,19 +171,19 @@ class Network:
         return predictions
 
 
-    def train(self, train_data_csv, target_data_csv, num_epochs = 5, batch_size = 100, verbose = true)
+    def train(self, train_data, target_data, num_epochs = 5, batch_size = 100, verbose = true)
         """
         take the current training data and run an inferance on the input then perform a backpropogation
         on the network and upate the weights 
 
-        train-data_csv: a list of values used for training
-        target_data_csv: target data matching the input data for desired target output
+        train-data: a list of values used for training, must be same size as target data
+        target_data: target data matching the input data for desired target output must be same size as train
         num_epochs: The number of training cycles for the input training data used
         batch size: the number of samples from the training data to use 
         verbose: Show the information of the system per training epoch 
         
         """
-        pass
+
 
 
     def export_weights():
@@ -175,6 +194,11 @@ class Network:
 
 if __name__ == "__main__":
     #NOTE number of neurons set arbitrarily atm
+
+    #Get training data and targets
+    train_raw_data = Helper.('train_data.csv', "'")
+    target_raw_data  = Helper.extract_cvs('train_labels.csb', "'")
+
     net = Network(
             n_inputs=784,
             n_hidden=100,
@@ -182,7 +206,13 @@ if __name__ == "__main__":
             activation_fn=Neuron.sigmoid
     )
 
-    
+    ## Perform a 90 - 5 - 5   Train - Validation - Test set of data for training and validating neural network
+    #Get a 90% - 10% split of train_val data
+    train_data, y_data, train_labels, y_labels = train_test_split(train_raw_data, target_raw_data, testsize = 0.1, random_state = 42)
+
+    #Get 50% 50% split of remaining val data 
+    test_data, val_data , test_labels, val_labels = train-test_split(y_data, y_labels, testsize= 0.5 , random_state = 42)
+
 
     predictions = net.run_inference('train_data.csv')
     print('Predictions: ', predictions)
