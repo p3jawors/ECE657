@@ -15,6 +15,18 @@ class Neuron:
         y = 1/(1 + np.exp(-x))
         return y
 
+
+    def tanh(x):
+        """
+        Takes a 1D float as input and returns a 1D float
+        Parameters
+        ----------
+        x: 1D float
+        """
+        y = (np.exp(x) - np.exp(x)) / (np.exp(x) + np.exp(-x))
+        return y
+
+
 class Layer:
     """
     Handles initializing weights and biases, and calculating feedforward layer output
@@ -66,6 +78,11 @@ class Layer:
 
         return layer_out
 
+   def modify_weights(self, updates):
+        return
+        
+    
+
 class Network:
     """
     Creates our network structure assuming the shape of n_inputs > n_hidden > n_outputs
@@ -80,10 +97,12 @@ class Network:
         Number of prediction categories
     activation_fn: function
         activation function for the neurons of the hidden layer and output
+    learning_rate: float
+            value between 0-1 to adjust learning between training sequences
     weights: tuple of float arrays shape ((2, n_hidden), (2, n_outputs))
     """
     #TODO have not setup weight loading, can have it as a (2, n_hidden + n_outputs) and slice, but this may be more legible
-    def __init__(self, n_inputs, n_hidden, n_outputs, activation_fn, weights=None):
+    def __init__(self, n_inputs, n_hidden, n_outputs, activation_fn, learning_rate=0.1, weights=None):
         # Instantiate our layers and initialize weights & biases
         self.layers = []
         self.layers.append(Layer(
@@ -97,6 +116,8 @@ class Network:
             weights=weights)
         )
 
+        self.learning_rate = learning_rate
+
 
 
     def feedforward(self, layer_input):
@@ -109,6 +130,7 @@ class Network:
 
 
     def backprop():
+        
         pass
 
 
@@ -130,6 +152,27 @@ class Network:
         return predictions
 
 
+    def train(self, train_data_csv, target_data_csv, num_epochs = 5, batch_size = 100, verbose = true)
+        """
+        take the current training data and run an inferance on the input then perform a backpropogation
+        on the network and upate the weights 
+
+        train-data_csv: a list of values used for training
+        target_data_csv: target data matching the input data for desired target output
+        num_epochs: The number of training cycles for the input training data used
+        batch size: the number of samples from the training data to use 
+        verbose: Show the information of the system per training epoch 
+        
+        """
+        pass
+
+
+    def export_weights():
+        """
+        export the weights of the network as a numpy array
+        """
+        pass
+
 if __name__ == "__main__":
     #NOTE number of neurons set arbitrarily atm
     net = Network(
@@ -138,6 +181,8 @@ if __name__ == "__main__":
             n_outputs=4,
             activation_fn=Neuron.sigmoid
     )
+
+    
 
     predictions = net.run_inference('train_data.csv')
     print('Predictions: ', predictions)
