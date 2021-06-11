@@ -275,8 +275,11 @@ if __name__ == "__main__":
     #Omitting k fold cross validation for  the dataset as well. 
     result = []
     net_weights = []
+    net_activation = []
+    net_hidden_cnt = []
+
     hidden_num_list = [20, 30, 40 ,50 ,60, 70, 80]
-    activation_list = [Neuron.sigmoid, Neuron.tanh]
+    activation_list = [Nonlinarities.sigmoid, Nonlinearities.tanh]
 
     for item in hidden_num_list:
         for active_fn in activation_list:
@@ -286,7 +289,7 @@ if __name__ == "__main__":
                  n_inputs=784,
                  n_hidden=item,
                  n_outputs=4,
-                 activation_fn=
+                 activation_fn=active_fn
             )           
 
             #Perform a training sequence on the input data and the given labels
@@ -295,13 +298,29 @@ if __name__ == "__main__":
             #Log accuracy from the given run after training and run a feedforward test using the validation data for this given
             #run.
             result.append(net.feedforward(val_data, val_labels))
-        
+
+            #snapshot the configuration of the weights and activation of the network
+            net_weights.append(net.export_weights())    
+            net_activation.append(active_fn)    
+            net_hidden_cnt.append(item)
+
+
+    best_run_idx = 0
+    index = 0
+    #Find the max accuracy
+    for run in result:
+        if run >= result[best_run_idx]:
+            best_run_idx = index
+        index = index + 1
+
+
     #Use the best result accuracy on the data itself
     net = Network(
          n_inputs=784,
-         n_hidden=best_hidden,
+         n_hidden=net_hidden_cnt[best_run_idx],
          n_outputs=4,
-         activation_fn=best_activation
+         activation_fn=net_activation[best_run_idx]
+         weights = net_weights[best_run_idx]
     )           
 
 
