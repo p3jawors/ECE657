@@ -32,13 +32,13 @@ class Helper:
     Useful stuff we dont want to pack in the network itself
     """
 
-    def extract_from_csv(csv_data_path, delim):
+    def extract_csv(csv_data_path, delim):
         """
         extract CSV data given a specific delimiter and return it as a list
         """    
         output_data_blob = []
 
-        with open(cvs_data_path, newline=delim) as fp
+        with open(csv_data_path, newline=delim) as fp:
             reader = cvs.reader(fp, delimiter=delim)
             for II, row in enumerate(reader):
                 data = list(map(float, row))
@@ -97,8 +97,8 @@ class Layer:
 
         return layer_out
 
-   def modify_weights(self, updates):
-        return
+    def modify_weights(self, updates):
+        pass
         
     
 
@@ -171,7 +171,7 @@ class Network:
         return predictions
 
 
-    def train(self, train_data, target_data, num_epochs = 5, batch_size = 100, verbose = true)
+    def train(self, train_data, target_data, num_epochs = 5, batch_size = 100, verbose = True):
         """
         take the current training data and run an inferance on the input then perform a backpropogation
         on the network and upate the weights 
@@ -183,7 +183,7 @@ class Network:
         verbose: Show the information of the system per training epoch 
         
         """
-
+        pass
 
 
     def export_weights():
@@ -196,8 +196,8 @@ if __name__ == "__main__":
     #NOTE number of neurons set arbitrarily atm
 
     #Get training data and targets
-    train_raw_data = Helper.('train_data.csv', "'")
-    target_raw_data  = Helper.extract_cvs('train_labels.csb', "'")
+    train_raw_data = Helper.extract_csv('train_data.csv', "'")
+    target_raw_data  = Helper.extract_csv('train_labels.csb', "'")
 
     net = Network(
             n_inputs=784,
@@ -211,7 +211,7 @@ if __name__ == "__main__":
     train_data, y_data, train_labels, y_labels = train_test_split(train_raw_data, target_raw_data, testsize = 0.1, random_state = 42)
 
     #Get 50% 50% split of remaining val data 
-    test_data, val_data , test_labels, val_labels = train-test_split(y_data, y_labels, testsize= 0.5 , random_state = 42)
+    test_data, val_data , test_labels, val_labels = train_test_split(y_data, y_labels, testsize= 0.5 , random_state = 42)
 
 
     predictions = net.run_inference('train_data.csv')
