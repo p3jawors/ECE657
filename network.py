@@ -283,8 +283,18 @@ class Network:
 
 
     def train(self, training_inputs, training_targets):
+        """
+        take the current training data and run an inferance on the input then perform a backpropogation
+        on the network and upate the weights
+
+        train-data: a list of values used for training, must be same size as target data
+        target_data: target data matching the input data for desired target output must be same size as train
+        num_epochs: The number of training cycles for the input training data used
+        batch size: the number of samples from the training data to use
+        verbose: Show the information of the system per training epoch
+        """
+
         training_error = []
-        #TODO we'll add batching later
         print('Starting training, sit tight!')
         for ii in tqdm(range(0, len(training_inputs))):
             _, err = self.feedforward(training_inputs[ii], training_targets[ii])
@@ -352,35 +362,15 @@ class Network:
         return error
 
 
-    # def run_inference(self, data_csv):
-    #     predictions = []
-    #     with open(data_csv, newline='') as fp:
-    #         reader = csv.reader(fp, delimiter=',')
-    #         for ii, row in enumerate(reader):
-    #             #NOTE this is a hack to test without reading all 24k vals
-    #             if ii > 5:
-    #                 break
-    #             data = list(map(float, row))
-    #             predictions.append(self.feedforward(data))
-    #
-    #     return predictions
-    #
-    #
-    # def train(self, train_data, target_data, num_epochs = 5, batch_size = 100, verbose = True):
-    #     """
-    #     take the current training data and run an inferance on the input then perform a backpropogation
-    #     on the network and upate the weights
-    #
-    #     train-data: a list of values used for training, must be same size as target data
-    #     target_data: target data matching the input data for desired target output must be same size as train
-    #     num_epochs: The number of training cycles for the input training data used
-    #     batch size: the number of samples from the training data to use
-    #     verbose: Show the information of the system per training epoch
-    #
-    #     """
-    #     pass
-    #
-    #
+    def inference(self, inference_inputs, inference_targets):
+        inference_error = []
+        for ii in tqdm(range(0, len(inference_inputs))):
+            _, err = self.feedforward(inference_inputs[ii], inference_targets[ii])
+            inference_error.append(err)
+
+        return np.asarray(inference_error)
+
+
     # def export_weights():
     #     """
     #     export the weights of the network as a numpy array
@@ -397,8 +387,8 @@ if __name__ == "__main__":
 
     # #NOTE HACK TO CUTE DOWN DATASIZE WHILE TESTING
     # print('HACK ADDED TO CUT DOWN DATA SIZE WHILE TESTING HERE')
-    # train_raw_data = np.asarray(train_raw_data)[:1000, :]
-    # target_raw_data = np.asarray(target_raw_data)[:1000, :]
+    # train_raw_data = np.asarray(train_raw_data)[:100, :]
+    # target_raw_data = np.asarray(target_raw_data)[:100, :]
 
     print('Splitting data into test/val/train')
     ## Perform a 90 - 5 - 5   Train - Validation - Test set of data for training and validating neural network
@@ -428,8 +418,11 @@ if __name__ == "__main__":
     bias_init_range = 0.3
 
     for learning_rate in learning_rates:
-        plt.figure()
-        plt.title('Training Error Learning Rate %.3f' % learning_rate)
+        fig = plt.figure(figsize=(8, 12))
+        a1 = plt.subplot(211)
+        a1.set_title('Training Error Learning Rate %.3f' % learning_rate)
+        a2 = plt.subplot(212)
+        a2.set_title('Validation Error Learning Rate %.3f' % learning_rate)
 
         for n_hidden in n_hidden_options:
             print('Instantiating network with %i hidden neurons and learing rate of %.3f...' % (n_hidden, learning_rate))
@@ -446,19 +439,32 @@ if __name__ == "__main__":
                     biases_hidden=None,
                     biases_output=None,
                     weight_init_range=weight_init_range,
-                    bias_init_range=bias_init_range):
+                    bias_init_range=bias_init_range
             )
 
+            # Run Training
             start = timeit.default_timer()
-            errors = net.train(
+            train_errors = net.train(
                     training_inputs=train_data,
                     training_targets=train_labels
             )
             runtime = timeit.default_timer() - start
             print('Training took %.2f min' % (runtime/60))
 
-            plt.plot(errors, label='n_hidden:%i\nFinal Error: %.4f' % (n_hidden, errors[-1]))
+            a1.plot(train_errors, label='n_hidden:%i\nmin train_err: %.4f' % (n_hidden, min(train_errors)))
+            plt.legend()
 
-        plt.legend()
+            # Run inference on trained network, using validation set
+            start = timeit.default_timer()
+            val_errors = net.inference(
+                    inference_inputs=val_data,
+                    inference_targets=val_labels
+            )
+            runtime = timeit.default_timer() - start
+            print('Validation Inference took %.2f min' % (runtime/60))
+
+            a2.plot(val_errors, label='n_hidden:%i\nmin val_err: %.4f' % (n_hidden, min(val_errors)))
+            plt.legend()
+
         plt.savefig('learning_rate%.3f.png' % learning_rate)
-        plt.show()
+        # plt.show()
