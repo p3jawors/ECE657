@@ -391,10 +391,10 @@ if __name__ == "__main__":
     # target_raw_data = np.asarray(target_raw_data)[:100, :]
 
     print('Splitting data into test/val/train')
-    ## Perform a 90 - 5 - 5   Train - Validation - Test set of data for training and validating neural network
-    #Get a 90% - 10% split of train_val data
+    ## Perform a 70 - 15 - 15   Train - Validation - Test set of data for training and validating neural network
+    #Get a 70% - 30% split of train_val data
     train_data, y_data, train_labels, y_labels = train_test_split(
-            train_raw_data, target_raw_data, test_size=0.1, random_state=42)
+            train_raw_data, target_raw_data, test_size=0.3, random_state=42)
 
     #Get 50% 50% split of remaining val data
     test_data, val_data , test_labels, val_labels = train_test_split(
@@ -410,8 +410,9 @@ if __name__ == "__main__":
     print('test data: ', test_data.shape)
 
     # Set your options for hidden neurons and learning rates
-    n_hidden_options = [10, 20, 60]#30, 40, 50, 60]
-    learning_rates = [0.1, 0.5]
+    n_hidden_options = [20, 40, 75, 150]
+    # learning_rates = [5e-4, 5e-3, 5e-2, 0.1, 0.25, 0.5]
+    learning_rates = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4]
 
     # these are used for the +/- limits of the random distribution drawn from for initialization of weights and biases
     weight_init_range = 0.1
@@ -420,12 +421,12 @@ if __name__ == "__main__":
     for learning_rate in learning_rates:
         fig = plt.figure(figsize=(8, 12))
         a1 = plt.subplot(211)
-        a1.set_title('Training Error Learning Rate %.3f' % learning_rate)
+        a1.set_title('Training Error Learning Rate %.6f' % learning_rate)
         a2 = plt.subplot(212)
-        a2.set_title('Validation Error Learning Rate %.3f' % learning_rate)
+        a2.set_title('Validation Error Learning Rate %.6f' % learning_rate)
 
         for n_hidden in n_hidden_options:
-            print('Instantiating network with %i hidden neurons and learing rate of %.3f...' % (n_hidden, learning_rate))
+            print('Instantiating network with %i hidden neurons and learing rate of %.6f...' % (n_hidden, learning_rate))
             # Instantiate our network
             net = Network(
                     n_inputs=784,
@@ -466,5 +467,5 @@ if __name__ == "__main__":
             a2.plot(val_errors, label='n_hidden:%i\nmin val_err: %.4f' % (n_hidden, min(val_errors)))
             plt.legend()
 
-        plt.savefig('learning_rate%.3f.png' % learning_rate)
+        plt.savefig('learning_rate%.7f.png' % learning_rate)
         # plt.show()
