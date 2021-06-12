@@ -1,6 +1,6 @@
 import numpy as np
 import csv
-from sklearn.model_selection import train_test_split
+# from sklearn.model_selection import train_test_split
 from acc_calc import accuracy
 
 
@@ -34,6 +34,10 @@ class Nonlinearities():
         y = 1/(1 + np.exp(-x))
         return y
 
+    def pd_sigmoid(y):
+        return y * (1-y)
+
+
 
     def tanh(x):
         """
@@ -54,18 +58,39 @@ class Neuron:
         self.weights = weights
         self.bias = bias
         if nonlinearity is None:
-            nonlinearity = Nonlinearities.sigmoid
-        self.nonlinearity = nonlinearity
+            self.nonlinearity = Nonlinearities.sigmoid
+            self.pd_nonlinearity = Nonlinearities.pd_sigmoid
+        else:
+            self.nonlinearity = nonlinearity[0]
+            self.pd_nonlinearity = nonlinearity[1]
 
     def linear_ops(self, layer_input):
         output = np.dot(np.asarray(layer_input), np.asarray(self.weights)) + self.bias
-        print('neuron linear ops: ', output)
+        # print('neuron linear ops: ', output)
         return output
 
     def forward(self, layer_input):
-        y = self.nonlinearity(self.linear_ops(layer_input))
-        print('neuron output: ', y)
-        return y
+        self.layer_input = layer_input
+        self.neuron_output = self.nonlinearity(self.linear_ops(layer_input))
+        # print('neuron output: ', self.neuron_output)
+        return self.neuron_output
+
+    def pd_error_wrt_network_input(self, target):
+        # a = self.pd_error_wrt_output(target=target)
+        # print('a: ', a)
+        # b = self.pd_nonlinearity(self.neuron_output)
+        # print('b: ', b)
+        return self.pd_error_wrt_output(target=target) * self.pd_nonlinearity(self.neuron_output)
+
+    def pd_error_wrt_output(self, target):
+        """
+        Partial derivative of the error wrt the desired output
+        """
+        return -(target - self.neuron_output)
+
+    def pd_input_wrt_weight(self, conn_index):
+        return self.layer_input[conn_index]
+
 
 class Layer:
     """
@@ -178,26 +203,93 @@ class Network:
         )
 
         self.learning_rate = learning_rate
+        self.network_output = None
+        self.error = None
 
 
-    def feedforward(self, layer_input):
+    def feedforward(self, layer_input, target=None):
         # propagate data forward
         for layer in self.layers:
             # overwrite our input with the output of the last layer
             layer_input = layer.forward(layer_input)
 
-        return layer_input
+        self.network_output = layer_input
+
+        # If given a target, calculate the error
+        if target is not None:
+            self.error = self.calc_error(target=target, network_output=self.network_output)
+        else:
+            self.error = None
+
+        return (self.network_output, self.error)
 
 
-    # def backprop():
-    #
-    #     pass
-    #
-    #
-    # def calc_error():
-    #     pass
-    #
-    #
+    def train(self, training_inputs, training_targets):
+        #TODO we'll add batching later
+        for ii in range(0, len(training_inputs)):
+            _, _ = self.feedforward(training_inputs[ii], training_targets[ii])
+
+
+            # STEP 1: Calculate weight updates for output layer
+            print('1: calc output weights')
+            pd_error_wrt_output_neuron = []
+            for nn, neuron in enumerate(self.layers[-1].neurons):
+                dw = neuron.pd_error_wrt_network_input(target=training_targets[ii][nn])
+                print('dw: ', dw)
+                pd_error_wrt_output_neuron.append(dw)
+
+            # STEP 2: Calculate weight updates for hidden layer
+            print('2: calc hidden weights')
+            pd_error_wrt_hidden_neuron = []
+            for hh, hidden_neuron in enumerate(self.layers[0].neurons):
+                error_wrt_hidden_neuron_sum = 0
+
+                for oo, output_neuron in enumerate(self.layers[-1].neurons):
+                    error_wrt_hidden_neuron_sum += pd_error_wrt_output_neuron[oo] * output_neuron.weights[hh]
+                    print('1: ', pd_error_wrt_output_neuron[hh])
+                    print('2: ', output_neuron.weights[oo])
+                    print('prod: ', error_wrt_hidden_neuron_sum)
+
+                pd_error_wrt_hidden_neuron.append(
+                        error_wrt_hidden_neuron_sum * hidden_neuron.pd_nonlinearity(hidden_neuron.neuron_output)
+                )
+                print('3: ', error_wrt_hidden_neuron_sum)
+                print('4: ', hidden_neuron.pd_nonlinearity(hidden_neuron.neuron_output))
+                print('prod: ', pd_error_wrt_hidden_neuron)
+
+                # print('a: ', pd_error_wrt_hidden_neuron)
+                # print('b: ', error_wrt_hidden_neuron_sum)
+                # print('c: ', hidden_neuron.pd_nonlinearity(hidden_neuron.neuron_output))
+            # Update weights for output neurons
+            for oo, output_neuron in enumerate(self.layers[-1].neurons):
+                for wj, weight in enumerate(output_neuron.weights):
+                    # print('should be one thing: ', pd_error_wrt_output_neuron[oo])
+                    # print(output_neuron.pd_input_wrt_weight(wj))
+                    dw = pd_error_wrt_output_neuron[oo] * output_neuron.pd_input_wrt_weight(wj)
+                    # print(output_neuron.weights[wj])
+                    # print(output_neuron.weights)
+                    # print(self.learning_rate)
+                    # print(dw)
+                    output_neuron.weights[wj] -= self.learning_rate * dw
+                    print('FINAL OUTPUT: ', output_neuron.weights[wj])
+
+            # Update weights for hidden neurons
+            for hh, hidden_neuron in enumerate(self.layers[0].neurons):
+                for wi, weight in enumerate(hidden_neuron.weights):
+                    dw = pd_error_wrt_hidden_neuron[hh] * hidden_neuron.pd_input_wrt_weight(wi)
+                    hidden_neuron.weights[wi] -= self.learning_rate * dw
+                    print('FINAL HIDDEN: ', hidden_neuron.weights[wi])
+
+
+
+    def calc_error(self, target, network_output):
+        error = 0
+        for ii, output_dim in enumerate(network_output):
+            error += 0.5 * (target[ii] - output_dim)**2
+
+        return error
+
+
     # def run_inference(self, data_csv):
     #     predictions = []
     #     with open(data_csv, newline='') as fp:
@@ -251,80 +343,90 @@ if __name__ == "__main__":
             n_inputs=2,
             n_hidden=2,
             n_outputs=2,
-            nonlinearity_hidden=Nonlinearities.sigmoid,
-            nonlinearity_output=Nonlinearities.sigmoid,
-            learning_rate=0.1,
+            nonlinearity_hidden=[Nonlinearities.sigmoid, Nonlinearities.pd_sigmoid],
+            nonlinearity_output=[Nonlinearities.sigmoid, Nonlinearities.pd_sigmoid],
+            learning_rate=0.5,
             weights_hidden=np.array([[0.15, 0.20], [0.25, 0.3]]),
             weights_output=np.array([[0.40, 0.45], [0.5, 0.55]]),
             biases_hidden=np.array([0.35, 0.35]),
             biases_output=np.array([0.6, 0.6])
 
     )
-    print('FEEDFOWARD: ', net.feedforward(np.array([0.05, 0.10])))
+    # print('FEEDFORWARD: ', net.feedforward(
+    #     layer_input=np.array([0.05, 0.10]),
+    #     target=np.array([0.01, 0.99])))
 
-    ## Perform a 90 - 5 - 5   Train - Validation - Test set of data for training and validating neural network
-    #Get a 90% - 10% split of train_val data
-    # train_data, y_data, train_labels, y_labels = train_test_split(train_raw_data, target_raw_data, testsize = 0.1, random_state = 42)
+    net.train(
+        training_inputs=np.array([[0.05, 0.10]]),
+        training_targets=np.array([[0.01, 0.99]]))
 
-    #Get 50% 50% split of remaining val data
-    # test_data, val_data , test_labels, val_labels = train-test_split(y_data, y_labels, testsize= 0.5 , random_state = 42)
-
-    
-    #Perform a search of the values accross number of nodes and check using the val dataset to find
-    #the best set of accuracy, Trying differnt activation as well as hidden number of nodes 
-    #Omitting k fold cross validation for  the dataset as well. 
-    result = []
-    net_weights = []
-    net_activation = []
-    net_hidden_cnt = []
-
-    hidden_num_list = [20, 30, 40 ,50 ,60, 70, 80]
-    activation_list = [Nonlinarities.sigmoid, Nonlinearities.tanh]
-
-    for item in hidden_num_list:
-        for active_fn in activation_list:
-
-            #Create a MLP network with teh given parameters we'd like to try
-            net = Network(
-                 n_inputs=784,
-                 n_hidden=item,
-                 n_outputs=4,
-                 activation_fn=active_fn
-            )           
-
-            #Perform a training sequence on the input data and the given labels
-            net.train(train_data, train_labels)
-
-            #Log accuracy from the given run after training and run a feedforward test using the validation data for this given
-            #run.
-            result.append(net.feedforward(val_data, val_labels))
-
-            #snapshot the configuration of the weights and activation of the network
-            net_weights.append(net.export_weights())    
-            net_activation.append(active_fn)    
-            net_hidden_cnt.append(item)
-
-
-    best_run_idx = 0
-    index = 0
-    #Find the max accuracy
-    for run in result:
-        if run >= result[best_run_idx]:
-            best_run_idx = index
-        index = index + 1
-
-
-    #Use the best result accuracy on the data itself
-    net = Network(
-         n_inputs=784,
-         n_hidden=net_hidden_cnt[best_run_idx],
-         n_outputs=4,
-         activation_fn=net_activation[best_run_idx]
-         weights = net_weights[best_run_idx]
-    )           
-
-
-    predictions = net.inference(test_data)
-    print('Predictions: ', predictions)
-
-
+    print('FEEDFORWARD: ', net.feedforward(
+        layer_input=np.array([0.05, 0.10]),
+        target=np.array([0.01, 0.99])))
+    #
+    # ## Perform a 90 - 5 - 5   Train - Validation - Test set of data for training and validating neural network
+    # #Get a 90% - 10% split of train_val data
+    # # train_data, y_data, train_labels, y_labels = train_test_split(train_raw_data, target_raw_data, testsize = 0.1, random_state = 42)
+    #
+    # #Get 50% 50% split of remaining val data
+    # # test_data, val_data , test_labels, val_labels = train-test_split(y_data, y_labels, testsize= 0.5 , random_state = 42)
+    #
+    #
+    # #Perform a search of the values accross number of nodes and check using the val dataset to find
+    # #the best set of accuracy, Trying differnt activation as well as hidden number of nodes 
+    # #Omitting k fold cross validation for  the dataset as well. 
+    # result = []
+    # net_weights = []
+    # net_activation = []
+    # net_hidden_cnt = []
+    #
+    # hidden_num_list = [20, 30, 40 ,50 ,60, 70, 80]
+    # activation_list = [Nonlinarities.sigmoid, Nonlinearities.tanh]
+    #
+    # for item in hidden_num_list:
+    #     for active_fn in activation_list:
+    #
+    #         #Create a MLP network with teh given parameters we'd like to try
+    #         net = Network(
+    #              n_inputs=784,
+    #              n_hidden=item,
+    #              n_outputs=4,
+    #              activation_fn=active_fn
+    #         )           
+    #
+    #         #Perform a training sequence on the input data and the given labels
+    #         net.train(train_data, train_labels)
+    #
+    #         #Log accuracy from the given run after training and run a feedforward test using the validation data for this given
+    #         #run.
+    #         result.append(net.feedforward(val_data, val_labels))
+    #
+    #         #snapshot the configuration of the weights and activation of the network
+    #         net_weights.append(net.export_weights())    
+    #         net_activation.append(active_fn)    
+    #         net_hidden_cnt.append(item)
+    #
+    #
+    # best_run_idx = 0
+    # index = 0
+    # #Find the max accuracy
+    # for run in result:
+    #     if run >= result[best_run_idx]:
+    #         best_run_idx = index
+    #     index = index + 1
+    #
+    #
+    # #Use the best result accuracy on the data itself
+    # net = Network(
+    #      n_inputs=784,
+    #      n_hidden=net_hidden_cnt[best_run_idx],
+    #      n_outputs=4,
+    #      activation_fn=net_activation[best_run_idx]
+    #      weights = net_weights[best_run_idx]
+    # )           
+    #
+    #
+    # predictions = net.inference(test_data)
+    # print('Predictions: ', predictions)
+    #
+    #
