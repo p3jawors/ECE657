@@ -195,6 +195,15 @@ class Layer:
 
         return np.asarray(layer_output)
 
+    def get_weights(self):
+        weights = []
+        biases = []
+        for neuron in self.neurons:
+            weights.append(neuron.weights)
+            biases.append(neuron.bias)
+
+        return (weights, biases)
+
 
 class Network:
     """
@@ -282,7 +291,7 @@ class Network:
         return (self.network_output, self.error)
 
 
-    def train(self, training_inputs, training_targets):
+    def train(self, training_inputs, training_targets, batch_size=1):
         """
         take the current training data and run an inferance on the input then perform a backpropogation
         on the network and upate the weights
@@ -295,6 +304,7 @@ class Network:
         """
 
         training_error = []
+
         print('Starting training, sit tight!')
         for ii in tqdm(range(0, len(training_inputs))):
             _, err = self.feedforward(training_inputs[ii], training_targets[ii])
@@ -302,7 +312,6 @@ class Network:
 
 
             # STEP 1: Calculate weight updates for output layer
-            # print('1: calc output weights')
             pd_error_wrt_output_neuron = []
             for nn, neuron in enumerate(self.layers[-1].neurons):
                 dw = neuron.pd_error_wrt_network_input(target=training_targets[ii][nn])
@@ -310,46 +319,28 @@ class Network:
                 pd_error_wrt_output_neuron.append(dw)
 
             # STEP 2: Calculate weight updates for hidden layer
-            # print('2: calc hidden weights')
             pd_error_wrt_hidden_neuron = []
             for hh, hidden_neuron in enumerate(self.layers[0].neurons):
                 error_wrt_hidden_neuron_sum = 0
 
                 for oo, output_neuron in enumerate(self.layers[-1].neurons):
                     error_wrt_hidden_neuron_sum += pd_error_wrt_output_neuron[oo] * output_neuron.weights[hh]
-                    # print('1: ', pd_error_wrt_output_neuron[hh])
-                    # print('2: ', output_neuron.weights[oo])
-                    # print('prod: ', error_wrt_hidden_neuron_sum)
 
                 pd_error_wrt_hidden_neuron.append(
                         error_wrt_hidden_neuron_sum * hidden_neuron.pd_nonlinearity(hidden_neuron.neuron_output)
                 )
-                # print('3: ', error_wrt_hidden_neuron_sum)
-                # print('4: ', hidden_neuron.pd_nonlinearity(hidden_neuron.neuron_output))
-                # print('prod: ', pd_error_wrt_hidden_neuron)
 
-                # print('a: ', pd_error_wrt_hidden_neuron)
-                # print('b: ', error_wrt_hidden_neuron_sum)
-                # print('c: ', hidden_neuron.pd_nonlinearity(hidden_neuron.neuron_output))
             # Update weights for output neurons
             for oo, output_neuron in enumerate(self.layers[-1].neurons):
                 for wj, weight in enumerate(output_neuron.weights):
-                    # print('should be one thing: ', pd_error_wrt_output_neuron[oo])
-                    # print(output_neuron.pd_input_wrt_weight(wj))
                     dw = pd_error_wrt_output_neuron[oo] * output_neuron.pd_input_wrt_weight(wj)
-                    # print(output_neuron.weights[wj])
-                    # print(output_neuron.weights)
-                    # print(self.learning_rate)
-                    # print(dw)
                     output_neuron.weights[wj] -= self.learning_rate * dw
-                    # print('FINAL OUTPUT: ', output_neuron.weights[wj])
 
             # Update weights for hidden neurons
             for hh, hidden_neuron in enumerate(self.layers[0].neurons):
                 for wi, weight in enumerate(hidden_neuron.weights):
                     dw = pd_error_wrt_hidden_neuron[hh] * hidden_neuron.pd_input_wrt_weight(wi)
                     hidden_neuron.weights[wi] -= self.learning_rate * dw
-                    # print('FINAL HIDDEN: ', hidden_neuron.weights[wi])
 
         return training_error
 
@@ -371,11 +362,19 @@ class Network:
         return np.asarray(inference_error)
 
 
-    # def export_weights():
-    #     """
-    #     export the weights of the network as a numpy array
-    #     """
-    #     pass
+    def export_weights(self):
+        """
+        export the weights of the network as a numpy array
+        """
+        weights = []
+        biases = []
+        for layer in self.layers:
+            weight_bias = layer.get_weights()
+            weights.append(weight_bias[0])
+            biases.append(weight_bias[1])
+
+        return (weights, biases)
+
 
 if __name__ == "__main__":
     #NOTE number of neurons set arbitrarily atm
@@ -384,11 +383,6 @@ if __name__ == "__main__":
     print('Loading data from csv file...')
     train_raw_data = Helper.extract_csv('train_data.csv')
     target_raw_data  = Helper.extract_csv('train_labels.csv')
-
-    # #NOTE HACK TO CUTE DOWN DATASIZE WHILE TESTING
-    # print('HACK ADDED TO CUT DOWN DATA SIZE WHILE TESTING HERE')
-    # train_raw_data = np.asarray(train_raw_data)[:100, :]
-    # target_raw_data = np.asarray(target_raw_data)[:100, :]
 
     print('Splitting data into test/val/train')
     ## Perform a 70 - 15 - 15   Train - Validation - Test set of data for training and validating neural network
@@ -410,9 +404,10 @@ if __name__ == "__main__":
     print('test data: ', test_data.shape)
 
     # Set your options for hidden neurons and learning rates
-    n_hidden_options = [20, 40, 75, 150]
+    n_hidden_options = [5]
     # learning_rates = [5e-4, 5e-3, 5e-2, 0.1, 0.25, 0.5]
-    learning_rates = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4]
+    # learning_rates = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4]
+    learning_rates = [1e-4]
 
     # these are used for the +/- limits of the random distribution drawn from for initialization of weights and biases
     weight_init_range = 0.1
@@ -466,6 +461,9 @@ if __name__ == "__main__":
 
             a2.plot(val_errors, label='n_hidden:%i\nmin val_err: %.4f' % (n_hidden, min(val_errors)))
             plt.legend()
+
+            weights, biases = net.export_weights()
+            np.savez_compressed('Pawel_and_Ted_weights.npz', weights=weights, biases=biases)
 
         plt.savefig('learning_rate%.7f.png' % learning_rate)
         # plt.show()
