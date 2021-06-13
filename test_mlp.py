@@ -7,7 +7,7 @@ STUDENT_ID = '20302981-20392961'
 
 def test_mlp(data_file=None):
 
-    weights_loc = 'first_pass-Pawel_and_Ted_weights.npz'
+    weights_loc = 'Pawel_and_Ted_weights.npz'
     weights, biases = Helper.load_weights(weights_loc)
 
     if data_file is None:

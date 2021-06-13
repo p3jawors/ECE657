@@ -440,7 +440,7 @@ if __name__ == "__main__":
             print('Instantiating network with %i hidden neurons and learing rate of %.6f...' % (n_hidden, learning_rate))
             # Instantiate our network
 
-            weights_loc = 'first_pass-Pawel_and_Ted_weights.npz'
+            weights_loc = 'Pawel_and_Ted_weights.npz'
             weights, biases = Helper.load_weights(weights_loc)
 
             net = Network(
