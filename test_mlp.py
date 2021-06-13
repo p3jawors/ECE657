@@ -7,18 +7,8 @@ STUDENT_ID = '20302981-20392961'
 
 def test_mlp(data_file=None):
 
-    # work around for possible numpy savez
-    # https://stackoverflow.com/questions/55890813/how-to-fix-object-arrays-cannot-be-loaded-when-allow-pickle-false-for-imdb-loa
-    # save np.load
-    np_load_old = np.load
-
-    # modify the default parameters of np.load
-    print('Loading network weights')
-    np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
-
-    trained_weights = np.load('Pawel_and_Ted_weights.npz')
-    weights = trained_weights['weights']
-    biases = trained_weights['biases']
+    weights_loc = 'first_pass-Pawel_and_Ted_weights.npz'
+    weights, biases = Helper.load_weights(weights_loc)
 
     if data_file is None:
         print('No data file was passed in, running with test split from training...')

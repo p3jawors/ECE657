@@ -84,6 +84,22 @@ class Helper:
         predictions = net.inference(test_data)
         print('Predictions: ', predictions)
 
+    def load_weights(path):
+        # work around for possible numpy savez
+        # https://stackoverflow.com/questions/55890813/how-to-fix-object-arrays-cannot-be-loaded-when-allow-pickle-false-for-imdb-loa
+        # save np.load
+        np_load_old = np.load
+
+        # modify the default parameters of np.load
+        print('Loading network weights')
+        np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+
+        trained_weights = np.load(path)
+        weights = trained_weights['weights']
+        biases = trained_weights['biases']
+        return weights, biases
+
+
 class Nonlinearities():
 
     def sigmoid(x):
@@ -404,7 +420,7 @@ if __name__ == "__main__":
     print('test data: ', test_data.shape)
 
     # Set your options for hidden neurons and learning rates
-    n_hidden_options = [5]
+    n_hidden_options = [75]
     # learning_rates = [5e-4, 5e-3, 5e-2, 0.1, 0.25, 0.5]
     # learning_rates = [1e-6, 5e-6, 1e-5, 5e-5, 1e-4]
     learning_rates = [1e-4]
@@ -423,6 +439,10 @@ if __name__ == "__main__":
         for n_hidden in n_hidden_options:
             print('Instantiating network with %i hidden neurons and learing rate of %.6f...' % (n_hidden, learning_rate))
             # Instantiate our network
+
+            weights_loc = 'first_pass-Pawel_and_Ted_weights.npz'
+            weights, biases = Helper.load_weights(weights_loc)
+
             net = Network(
                     n_inputs=784,
                     n_hidden=n_hidden,
@@ -430,10 +450,14 @@ if __name__ == "__main__":
                     nonlinearity_hidden=[Nonlinearities.sigmoid, Nonlinearities.pd_sigmoid],
                     nonlinearity_output=[Nonlinearities.sigmoid, Nonlinearities.pd_sigmoid],
                     learning_rate=learning_rate,
-                    weights_hidden=None,
-                    weights_output=None,
-                    biases_hidden=None,
-                    biases_output=None,
+                    weights_hidden=weights[0],
+                    weights_output=weights[1],
+                    biases_hidden=biases[0],
+                    biases_output=biases[1],
+                    # weights_hidden=None,
+                    # weights_output=None,
+                    # biases_hidden=None,
+                    # biases_output=None,
                     weight_init_range=weight_init_range,
                     bias_init_range=bias_init_range
             )
