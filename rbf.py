@@ -30,21 +30,46 @@ class RBF:
         print('WEIGHT MATRIX: ', self.weights.shape)
 
     def gauss_kernel_func(self, x):
-        b = np.exp((-1*(np.linalg.norm(x-self.centers, axis=1)**2)/(2*self.widths**2)))
-        return b
+        # for ii in range(0, len(self.centers)):
+            # b = np.exp(
+            #         (-1*
+            #             ((x[0]-self.centers[ii][0])**2 + x[1]-self.centers[ii][1]**2)**2
+            #             /(2*self.widths[ii]**2)))
+        #     out.append(b)
+        # out = np.asarray(out)
+        # return out
+        return np.exp((-1*(np.linalg.norm(x-self.centers, axis=1)**2)/(2*self.widths**2)))
 
     def inference(self, x):
         print('====INFERENCE====')
-        outputs = []
+        activities = []
         for input_val in x:
             activity = self.gauss_kernel_func(input_val)
+            activities.append(activity)
             # print('act: ', activity.shape)
             # print('wei: ', self.weights.shape)
-            out = np.sum(self.weights * activity)
+            # out = np.sum(self.weights * activity)
             # print('out: ', out.shape)
-            outputs.append(out)
+            # outputs.append(out)
             # raise Exception
+        activities = np.asarray(activities)
+        outputs = np.sum(self.weights * activities, axis=1)
         outputs = np.asarray(outputs)
+
+        # outputs = []
+        # for input_val in x:
+        #     activity = self.gauss_kernel_func(input_val)
+        #     # print('act: ', activity.shape)
+        #     # print('wei: ', self.weights.shape)
+        #     out = np.sum(self.weights * activity)
+        #     # print('out: ', out.shape)
+        #     outputs.append(out)
+        #     # raise Exception
+        # outputs = np.asarray(outputs)
+        # # print('activities: ', self.activities)
+        # # print('weights: ', self.weights)
+        # # print('outputs: ', outputs)
+
         return outputs
 
     def forward(self, x):
@@ -53,11 +78,20 @@ class RBF:
 
         self.activities = []
         for input_val in self.input:
+            # print('------')
+            # print('input: ', input_val)
+            # print('centers: ', self.centers[:10])
             activity = self.gauss_kernel_func(input_val)
+            # print('act: ', activity[:10])
             self.activities.append(activity)
+            # raise Exception
         self.activities = np.asarray(self.activities)
 
         self.output = np.sum(self.weights * self.activities, axis=1)
+        # print('activities: ', self.activities)
+        # print('weights: ', self.weights)
+        # print('outputs: ', self.output)
+
         print('weights| (n_hiddenxn_output): ', self.weights.shape)
         print('input| (n_samplesxn_input): ', self.input.shape)
         print('activities| (n_samplesxn_hidden): ', self.activities.shape)
@@ -76,14 +110,18 @@ class RBF:
             print('Inverse')
             inv = np.linalg.inv(self.activities)
             print('inv: ', inv.shape)
+            print(inv)
             print('output: ', target_output.shape)
+            print(target_output)
             # print('inv*out: ', (inv*target_output).shape)
-            self.weights = np.matmul(np.linalg.inv(self.activities), target_output)
+            # self.weights = np.matmul(np.linalg.inv(self.activities), target_output)
+            self.weights = np.linalg.inv(self.activities) @ target_output
         # pseudo inverse
         else:
             print('Pseudo-inverse')
             self.weights = np.linalg.pinv(self.activities) * target_output
         print('FINAL WEIGHTS: ', self.weights.shape)
+        print(self.weights)
 
 
 def generate_inputs():
@@ -144,18 +182,10 @@ print('target output flattened shape: ', np.asarray(y).shape)
 # flatten our input, otherwise scikit selects by column
 # get our train/test split
 train_data, test_data, train_labels, test_labels = train_test_split(x, y, test_size=0.2, random_state=0)
-# reshape from 3d to 2d
-# train_data = train_data.reshape((np.prod(train_data.shape[:2]), train_data.shape[-1]))
-# test_data = test_data.reshape((np.prod(test_data.shape[:2]), test_data.shape[-1]))
-# print('OG train_data shape: ', train_data.shape)
-# print('OG test_data shape: ', test_data.shape)
 print('train_data shape: ', train_data.shape)
 print('test_data shape: ', test_data.shape)
 print('train labels: ', train_labels.shape)
 print('test labels: ', test_labels.shape)
-# print('NOW MAKE THEM SQUARE!')
-# train_data = train_data.reshape(
-
 
 # set our layer sizes
 n_input = 2
@@ -175,17 +205,21 @@ print('centers: ', centers.shape)
 print('Creating RBFN with %i input, %i hidden, and %i output' % (n_input, n_hidden, n_output))
 rbf = RBF(n_input, n_hidden, n_output, centers=centers, widths=widths)
 print('Running forward pass')
+# print(train_data)
+# print(train_labels)
+# raise Exception
 output = rbf.forward(train_data)
 rbf.backward(train_labels)
 print('output shape: ', output.shape)
-test_out = rbf.inference(test_data)
+test_out = rbf.inference(train_data)
+# test_out = rbf.inference(train_data)
 print('test output shape: ', test_out.shape)
 
 plt.figure()
 a1 = plt.subplot(111, projection='3d')
-# c1 = a1.plot_trisurf(x[:, 0], x[:, 1], y, label='GT')
-# c1._facecolors2d=c1._facecolors3d
-# c1._edgecolors2d=c1._edgecolors3d
+c1 = a1.plot_trisurf(x[:, 0], x[:, 1], y, label='GT')
+c1._facecolors2d=c1._facecolors3d
+c1._edgecolors2d=c1._edgecolors3d
 c2 = a1.plot_trisurf(test_data[:, 0], test_data[:, 1], test_out, label='TEST')
 c2._facecolors2d=c2._facecolors3d
 c2._edgecolors2d=c2._edgecolors3d
