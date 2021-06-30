@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 from sklearn.model_selection import train_test_split
+
 
 class RBF:
     def __init__(self, n_inputs, n_hidden, n_outputs, centers, widths):
@@ -28,25 +30,33 @@ class RBF:
         print('WEIGHT MATRIX: ', self.weights.shape)
 
     def gauss_kernel_func(self, x):
-        # print('IN GAUS:::::')
-        # print('input: ', x.shape)
-        # print('centers: ', self.centers.shape)
-        activities = []
+        b = np.exp((-1*(np.linalg.norm(x-self.centers, axis=1)**2)/(2*self.widths**2)))
+        return b
+
+    def inference(self, x):
+        print('====INFERENCE====')
+        outputs = []
         for input_val in x:
-            # print('single input val: ', input_val.shape)
-            a = np.exp((-1*(np.linalg.norm(input_val-self.centers, axis=1)**2)/(2*self.widths**2)))
-            # print('linalg: ', (np.linalg.norm(input_val-self.centers, axis=1)).shape)
-            # print('linalg**2: ', (np.linalg.norm(input_val-self.centers, axis=1)**2).shape)
-            # print('denom: ', (self.widths**2).shape)
-            # print('activity: ', a.shape)
-            activities.append(a)
-            # break
-        return np.asarray(activities)
+            activity = self.gauss_kernel_func(input_val)
+            # print('act: ', activity.shape)
+            # print('wei: ', self.weights.shape)
+            out = np.sum(self.weights * activity)
+            # print('out: ', out.shape)
+            outputs.append(out)
+            # raise Exception
+        outputs = np.asarray(outputs)
+        return outputs
 
     def forward(self, x):
         print('====FORWARD=====')
         self.input = x
-        self.activities = self.gauss_kernel_func(self.input)
+
+        self.activities = []
+        for input_val in self.input:
+            activity = self.gauss_kernel_func(input_val)
+            self.activities.append(activity)
+        self.activities = np.asarray(self.activities)
+
         self.output = np.sum(self.weights * self.activities, axis=1)
         print('weights| (n_hiddenxn_output): ', self.weights.shape)
         print('input| (n_samplesxn_input): ', self.input.shape)
@@ -63,10 +73,10 @@ class RBF:
         print('weights: ', self.weights.shape)
         # normal inverse
         if self.n_hidden >= len(self.input):
-            # print('Inverse')
-            # inv = np.linalg.inv(self.activities)
-            # print('inv: ', inv.shape)
-            # print('output: ', target_output.shape)
+            print('Inverse')
+            inv = np.linalg.inv(self.activities)
+            print('inv: ', inv.shape)
+            print('output: ', target_output.shape)
             # print('inv*out: ', (inv*target_output).shape)
             self.weights = np.matmul(np.linalg.inv(self.activities), target_output)
         # pseudo inverse
@@ -168,7 +178,17 @@ print('Running forward pass')
 output = rbf.forward(train_data)
 rbf.backward(train_labels)
 print('output shape: ', output.shape)
-# test_out = rbf.forward(test_data)
-#
-# # plt.figure()
-# # plt.plot(
+test_out = rbf.inference(test_data)
+print('test output shape: ', test_out.shape)
+
+plt.figure()
+a1 = plt.subplot(111, projection='3d')
+# c1 = a1.plot_trisurf(x[:, 0], x[:, 1], y, label='GT')
+# c1._facecolors2d=c1._facecolors3d
+# c1._edgecolors2d=c1._edgecolors3d
+c2 = a1.plot_trisurf(test_data[:, 0], test_data[:, 1], test_out, label='TEST')
+c2._facecolors2d=c2._facecolors3d
+c2._edgecolors2d=c2._edgecolors3d
+
+plt.legend()
+plt.show()
