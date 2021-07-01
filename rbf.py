@@ -131,6 +131,7 @@ def ground_truth_func(x):
 
 
 
+#=========================================SETUP
 # Generate our input and target data
 x = np.ones((21, 21, 2))
 for ii in range(0, x.shape[0]):
@@ -150,12 +151,16 @@ for ii, input_val in enumerate(x):
 
 print('target output shape: ', np.asarray(y).shape)
 
+# ========================== P1
 # get our train/test split
+# set test_size to 0.659 for 150 rbf nodes
 train_data, test_data, train_labels, test_labels = train_test_split(x, y, test_size=0.2, random_state=0)
+# train_data = x
+# train_labels = y
 print('train_data shape: ', train_data.shape)
-print('test_data shape: ', test_data.shape)
+# print('test_data shape: ', test_data.shape)
 print('train labels: ', train_labels.shape)
-print('test labels: ', test_labels.shape)
+# print('test labels: ', test_labels.shape)
 
 # Create our rbf network
 # set our layer sizes
@@ -164,7 +169,7 @@ n_hidden = np.prod(train_data.shape[0])
 n_output = 1
 
 # returns the widths of our rbfs
-width = 1
+width = 0.2
 widths = np.ones(n_hidden) * width
 centers = train_data
 print('widths: ', widths.shape)
@@ -189,9 +194,60 @@ a1.scatter(train_data[:, 0], train_data[:, 1], np.squeeze(train_out), label='TRA
 # c1 = a1.plot_trisurf(x[:, 0], x[:, 1], y, label='GT')
 # c1._facecolors2d=c1._facecolors3d
 # c1._edgecolors2d=c1._edgecolors3d
-# c2 = a1.plot_trisurf(test_data[:, 0], test_data[:, 1], test_out, label='TEST')
+# # c2 = a1.plot_trisurf(test_data[:, 0], test_data[:, 1], test_out, label='TEST')
 # c2 = a1.plot_trisurf(train_data[:, 0], train_data[:, 1], np.squeeze(train_out), label='TRAIN')
-# c2 = a1.plot_trisurf(train_data[:, 0], train_data[:, 1], test_out, label='TEST')
+# # c2 = a1.plot_trisurf(train_data[:, 0], train_data[:, 1], test_out, label='TEST')
+# c2._facecolors2d=c2._facecolors3d
+# c2._edgecolors2d=c2._edgecolors3d
+
+plt.legend()
+plt.show()
+
+# ========================== P2a Using 150RBFs - using training data as centers
+# get our train/test split
+train_data, test_data, train_labels, test_labels = train_test_split(x, y, test_size=0.659, random_state=0)
+# train_data = x
+# train_labels = y
+print('train_data shape: ', train_data.shape)
+# print('test_data shape: ', test_data.shape)
+print('train labels: ', train_labels.shape)
+# print('test labels: ', test_labels.shape)
+
+# Create our rbf network
+# set our layer sizes
+n_input = 2
+n_hidden = np.prod(train_data.shape[0])
+n_output = 1
+
+# returns the widths of our rbfs
+width = 0.2
+widths = np.ones(n_hidden) * width
+centers = train_data
+print('widths: ', widths.shape)
+print('centers: ', centers.shape)
+
+# Using training data as rbf centers
+print('Creating RBFN with %i input, %i hidden, and %i output' % (n_input, n_hidden, n_output))
+rbf = RBF(n_input, n_hidden, n_output, centers=centers, widths=widths)
+# run forward and backward pass to get weights
+train_out = rbf.forward(train_data)
+print('train output shape: ', train_out.shape)
+rbf.backward(train_labels)
+# sanity check, this should match our data exactly if activities is invertable
+test_out = rbf.inference(train_data)
+print('test output shape: ', test_out.shape)
+
+plt.figure()
+a1 = plt.subplot(111, projection='3d')
+a1.scatter(x[:, 0], x[:, 1], y, label='GT')
+a1.scatter(train_data[:, 0], train_data[:, 1], np.squeeze(train_out), label='TRAIN')
+
+# c1 = a1.plot_trisurf(x[:, 0], x[:, 1], y, label='GT')
+# c1._facecolors2d=c1._facecolors3d
+# c1._edgecolors2d=c1._edgecolors3d
+# # c2 = a1.plot_trisurf(test_data[:, 0], test_data[:, 1], test_out, label='TEST')
+# c2 = a1.plot_trisurf(train_data[:, 0], train_data[:, 1], np.squeeze(train_out), label='TRAIN')
+# # c2 = a1.plot_trisurf(train_data[:, 0], train_data[:, 1], test_out, label='TEST')
 # c2._facecolors2d=c2._facecolors3d
 # c2._edgecolors2d=c2._edgecolors3d
 
