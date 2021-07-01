@@ -27,44 +27,52 @@ class RBF:
         self.widths = widths
         weight_init_range = 0.5
         self.weights = np.random.uniform(-weight_init_range, weight_init_range, (n_hidden, n_outputs))
-        print('weights: ', self.weights.shape)
 
     def gauss_kernel_func(self, x):
+        """
+        Applies the gauss kernel with the instantiated widths and centers for all rbf nodes to the single input.
+        Returns the output of each rbf node on the single input.
+
+        Parameters
+        ----------
+        x: np.array (n_inputs, )
+            an input from the series of inputs
+        """
         return np.exp((-1*(np.linalg.norm(x-self.centers, axis=1)**2)/(2*self.widths**2)))
 
     def inference(self, x):
+        """
+        Takes a set of input data and applies the gauss kernel function on them, then does the weighted summation
+        to obtain network outputs of shape (n_input_data, n_output)
+
+        Parameters
+        ----------
+        x: np.array (n_input_data, n_inputs)
+        """
         print('====INFERENCE====')
         activities = []
         for input_val in x:
             activity = self.gauss_kernel_func(input_val)
             activities.append(activity)
-            # print('act: ', activity.shape)
-            # print('wei: ', self.weights.shape)
-            # out = np.sum(self.weights * activity)
-            # print('out: ', out.shape)
-            # outputs.append(out)
-            # raise Exception
         activities = np.asarray(activities)
-        outputs = np.sum(self.weights * activities, axis=1)
-        outputs = np.asarray(outputs)
 
-        # outputs = []
-        # for input_val in x:
-        #     activity = self.gauss_kernel_func(input_val)
-        #     # print('act: ', activity.shape)
-        #     # print('wei: ', self.weights.shape)
-        #     out = np.sum(self.weights * activity)
-        #     # print('out: ', out.shape)
-        #     outputs.append(out)
-        #     # raise Exception
+        # outputs = np.sum(self.weights * activities, axis=1)
         # outputs = np.asarray(outputs)
-        # # print('activities: ', self.activities)
-        # # print('weights: ', self.weights)
-        # # print('outputs: ', outputs)
-
+        outputs = activities @ self.weights
         return outputs
 
     def forward(self, x):
+        """
+        Takes a set of input data and applies the gauss kernel function on them, then does the weighted summation
+        to obtain network outputs of shape (n_input_data, n_output).
+        Differs from self.inference because here we store the inputs, activities, and output to self variables that
+        are used during inference.
+
+        Parameters
+        ----------
+        x: np.array (n_input_data, n_inputs)
+        """
+
         print('====FORWARD=====')
         self.input = x
 
@@ -83,6 +91,16 @@ class RBF:
         return self.output
 
     def backward(self, target_output):
+        """
+        Run this after running self.forward where we determine and store our series of activities.
+        Accepts the matching target outputs for the inputs used during the forward pass. Performs
+        the matrix (pseudo)inverse using the series of activities and target output obtain the output weights.
+        Parameters
+        ----------
+        target_output: np.array (n_input_data, n_outputs)
+            the target outputs of the inputs used during self.forward
+
+        """
         if target_output.ndim == 1:
             target_output = np.expand_dims(target_output, 1)
         print('====BACKWARD===')
@@ -95,7 +113,6 @@ class RBF:
             print('Inverse')
             # np.savez_compressed('test_data.npz', activities=self.activities, weights=self.weights, targets=target_output)
             self.weights = np.linalg.inv(self.activities) @ target_output
-
 
         # pseudo inverse
         else:
