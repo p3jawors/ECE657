@@ -4,7 +4,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.model_selection import train_test_split
 
 class SOM:
-    def __init__(self, n_inputs, n_outputs, init_learn_rate, init_neighborhood_sigma=0, n_epochs=1000):
+    def __init__(self, n_inputs, n_outputs, init_learn_rate, init_sigma=0, n_epochs=1000):
         """
         Creates a symmetric nxn self organizing map using n_outputs as the dimensions
         All parametrs are set on startup such as epoch, learning rate, neighborhood sigma, prior to the
@@ -33,12 +33,17 @@ class SOM:
         self.n_inputs = n_inputs
         self.n_outputs = n_outputs
         self.init_learn_rate = init_learn_rate
-        self.init_neighborhood_sigma = init_neighborhood_sigma
+        self.init_sigma = init_sigma
         self.n_epochs = n_epochs
 
         #intialize weights and other params that get adjusted during training should have a n_input x (n_output x n_output) tensor for our matrix
         weight_init_range = 0.1
         self.weights = np.random.uniform(-weight_init_range, weight_init_range, (self.n_inputs, self.n_outputs, self.n_outputs))
+        self.neighbourhood_indices = np.zeros((2, n_outputs, n_outputs))
+        for ii in range(0, self.n_outputs):
+            for jj in range(0, self.n_outputs):
+                self.neighbourhood_indices[:, ii, jj] = [ii, jj]
+
 
 
         # Keep a count of epoch as thats used to decay our neighborhood and learning rate
@@ -47,10 +52,9 @@ class SOM:
 
         #Set the current state to the initial learning rate
         self.current_learn_rate = init_learn_rate
-        self.current_neighborhood_sigma = init_neighborhood_sigma
 
 
-    def updateSigmaNeighborhood(self):
+    def updateSigmaNeighbourhood(self):
         """
         Updated the value of the spread (sigma) in the gaussian neighborhood around a winner node.
         Uses the internal state of the Self organizing maps current nodee as well as
@@ -80,7 +84,7 @@ class SOM:
         self.current_learn_rate = self.init_learn_rate * np.exp(- self.current_epoch / self.n_epochs)
 
 
-    def updateNeighborHood(self, winning_node, target_node):
+    def getNeighbourhood(self, winning_index):
         """
         Updated the neighborhood around the winning node and target nodes around it. This applies the update
         procedure by invoking the following chain
@@ -93,14 +97,20 @@ class SOM:
             2x1 vector of position of the target node in the output map
 
         """
-        epoch = self.current_epoch
-        self.current_neighborhood = (
-                self.init_neighborhood
-                * np.exp(
-                    - self.get_distance(winning_node, target_node)
-                    / (2 * self.updateSigmaNeighborhood() ^2)
+        sigma = self.updateSigmaNeighbourhood()
+        neighbourhood = (
+                np.exp(
+                    # -np.linalg.norm(self.neighbourhood_indices - winning_index[:, None, None])
+                    -self.get_distance(winning_index, self.neighbourhood_indices)
+                    / (2*sigma^2)
                     )
                 )
+        print('NEI SCALE: ', neighbourhood.shape)
+        print(neighbourhood)
+        # print('winn: ', winning_index)
+        # print(neighbourhood.shape)
+        print('winning index scale should be 1: ', neighbourhood[winning_index[0], winning_index[1]])
+        return neighbourhood
 
 
     def fit(self, training_data, n_epochs=None):
@@ -123,14 +133,16 @@ class SOM:
             dist = self.get_distance(data_point, self.weights)
 
             # argmin returns the index on the flatten array, unravel_index returns the 2d value
-            min_index = np.unravel_index(np.argmin(dist), dist.shape)
-            print('min index: ', min_index)
-            print(dist[min_index])
+            min_index = np.asarray(np.unravel_index(np.argmin(dist), dist.shape))
+            print('WINNING min index: ', min_index)
+            print('min dist value: ', dist[min_index[0], min_index[1]])
 
             # Step 4: Update weight matrix
+            neigbhourhood = self.getNeighbourhood(min_index)
 
             # Step 5: Update learning rate and neighbourhood
             raise Exception
+        self.current_epoch += 1
 
 
     def get_state(self):
