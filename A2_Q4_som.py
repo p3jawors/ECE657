@@ -24,19 +24,26 @@ class SOM:
             the initial Neighborhood value used to shrink update between epochs. 
             Default = 0 (Winner take all strategy) 
              =/= 0 (Cooperative Strategy)
+
+        n_train_cycles: int
+            the max amoutn of training epochs used for the output map.
+        prev_state: class SOM
+            Push the previous state of another similar sized mapped to this instance.
         """
         self.n_inputs = n_inputs
         self.n_hidden = n_hidden
-        self.n_outputs_x = n_outputs_x
-        self.n_outputs_y = n_outputs_y
+        self.n_outputs = n_outputs
         self.init_learn_rate = init_learn_rate
         self.init_neighborhood_sigma = init_neighborhood_sigma
         self.n_train_cycles = n_train_cycles
 
-        #intialize weights and other params that get adjusted during training
+        #intialize weights and other params that get adjusted during training should have a n_input x (n_output x n_output) tensor for our matrix
         weight_init_range = 0.5
-        self.weights = np.random.uniform(-weight_init_range, weight_init_range, (n_hidden, n_outputs))   
-        #Keep a count of epoch as thats used to decay our neighborhood and learning rate 
+        self.weights = np.random.uniform(-weight_init_range, weight_init_range, (self.n_inputs, self.n_outputs, self.n_outputs))   
+
+
+        # Keep a count of epoch as thats used to decay our neighborhood and learning rate 
+        # current_epoch as well as n_train_cycles is used to determine time with respect to epoch in the SOM
         self.current_epoch = 0
 
         #Set the current state to the initial learning rate
@@ -50,7 +57,6 @@ class SOM:
             Uses the internal state of the Self organizing maps current nodee as well as 
             """
             new_sigma = self.init_sigma * np.exp(-(self.current_epoch / self.n_train_cycles))
-
             return new_sigma 
     
         def get_distance(self, a, b):
@@ -92,8 +98,35 @@ class SOM:
             self.current_neighborhood = self.init_neighborhood  * np.exp(- self.get_distance(winning_node, target_node) / (2 * self.updateSigmaNeighborhood() ^2))
             
 
+       def fit(self, training_data, number_epochs = self.n_train_cycles):
+            """
+            Train the map over the given set of cycles
 
-       def train()
+            Parameters
+            -------------
+            training_data: np.array (r,g,b)
+                A 3x1 input array with the data values to train the map 
+
+            number_epochs: int
+                The number of desired training epochs to progress over the current map
+            """ 
+            #TODO - Run over each weight over the inputs form the algo in class            
+
+
+
+      def get_state(self)
+            """
+            Get the current state of the weight matrix as a n_intput x n_output x n_output numpy array
+            Used to see the resulting RGB value or the resultant output node
+            """
+
+
+#Generate input data for the color scheme of 24 colours
+#TODO - 3x1 vectors to encode RBG values for training. Normalize the data for each component to be within 0-1
+# Pick s tuff form here https://www.cs.hmc.edu/~kpang/nn/som.html  . We need 24 Colours for training data.
+# Red, Blue, Green, yellow, White, Black, Grey, teal, pink, purple, cyan, orange, neon, lime, fuschia, brown? I've never wished to be colourblind so much right now. 
+training_data = []
+
 
 #Create the self organizing map given the following parameters of our data we wish to train and output
 # Use parameters supplied by the assignment 4 to initialize it
@@ -105,10 +138,21 @@ init_neighborhood = 0.1
 max_epochs = 1000
 
 sigma_list = [1, 10 ,30, 50, 70]
+epoch_states = [20, 40, 100, 1000]
 
-init_sigma = 1
-#Generate an n_output x n_output (square) feature map
-som_map = SOM(n_input, n_output, init_learn_rate, init_sigma, max_epochs)
+# Get a series of output maps for each sigma_list value and append the map to a resultant output weight map we store
+# For later output and viewing.
+for sigma in sigma_list:
+    #Generate an n_output x n_output (square) feature map
+    som_map = SOM(n_input, n_output, init_learn_rate, sigma, max_epochs)
+    prev_epoch_count = 0 #Prev num epochs completed
 
+    #Train the Self organizing map on the data using the unsupervised model over a number of epochs
+    for epoch_count in epoch_states:
+        pochs_left_to_train = epoch_count - prev_epoch_count
 
+        som_map.fit(training_data, epoch_left_to_train)
+        current_train_state.append(som.get_state())
+
+        rev_epoch_count = prev_epoch_count + epochs_left_to_train
 
