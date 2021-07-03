@@ -5,7 +5,7 @@ from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
 class SOM:
-    def __init__(self, n_inputs, n_outputs, init_learn_rate, init_sigma=0, n_epochs=1000):
+    def __init__(self, n_inputs, n_outputs, init_learn_rate, init_sigma=0, n_epochs=1000, seed=0):
         """
         Creates a symmetric nxn self organizing map using n_outputs as the dimensions
         All parametrs are set on startup such as epoch, learning rate, neighborhood sigma, prior to the
@@ -21,7 +21,7 @@ class SOM:
             number output nodes in X and Y direction
         init_learn_rate: float
             the initial learning rate parameter which tapers off per epoch
-        init_neighborhood_sigma : init (default 0)
+        init_sigma : init (default 0)
             the initial Neighborhood value used to shrink update between epochs.
             Default = 0 (Winner take all strategy)
                 =/= 0 (Cooperative Strategy)
@@ -39,6 +39,7 @@ class SOM:
 
         #intialize weights and other params that get adjusted during training should have a n_input x (n_output x n_output) tensor for our matrix
         weight_init_range = 0.1
+        np.random.seed(seed)
         self.weights = np.random.uniform(-weight_init_range, weight_init_range, (self.n_inputs, self.n_outputs, self.n_outputs))
         self.neighbourhood_indices = np.zeros((2, n_outputs, n_outputs))
         for ii in range(0, self.n_outputs):
@@ -85,7 +86,7 @@ class SOM:
         """
         neighbourhood = (
                 np.exp(
-                    -self.get_distance(winning_index, self.neighbourhood_indices)
+                    -self.get_distance(winning_index, self.neighbourhood_indices)**2
                     / (2*self.sigma**2)
                     )
                 )
@@ -104,7 +105,7 @@ class SOM:
         if epochs_to_return is not None:
             epoch_weights = {}
 
-        print('Running %i epochs of training...' % self.n_epochs)
+        print('Running %i epochs of training with sigma %.1f...' % (self.n_epochs, self.init_sigma))
         for self.current_epoch in tqdm(range(0, self.n_epochs)):
             # Update the learning rate using a time varying decaying exponential using the current epoch
             # and the max amount of epochs
@@ -123,11 +124,12 @@ class SOM:
 
                 # Step 4: Update weight matrix
                 neighbourhood = self.getNeighbourhood(min_index)
-                self.weights = self.weights + self.learn_rate*dist*neighbourhood
+                diff = data_point[:, None, None] - self.weights
+                self.weights = self.weights + self.learn_rate*neighbourhood*(diff)
 
             if epochs_to_return is not None:
                 if self.current_epoch in epochs_to_return:
-                    epoch_weights['epoch_%i' % self.current_epoch] = self.weights
+                    epoch_weights['epoch_%i' % (self.current_epoch+1)] = self.weights
 
             self.current_epoch += 1
 
@@ -194,36 +196,26 @@ init_neighborhood = 0.1
 max_epochs = 1000
 
 sigma_list = [0.8, 1, 10 ,30, 50, 70]
-epoch_states = [0, 20, 40, 100, 1000]
+epoch_states = [0, 19, 39, 99, 999]
 
 # Get a series of output maps for each sigma_list value and append the map to a resultant output weight map we store
 # For later output and viewing.
-# for sigma in sigma_list:
-sigma = 0.8
-#Generate an n_output x n_output (square) feature map
-som_map = SOM(n_input, n_output, init_learn_rate, sigma, max_epochs)
-
-#Train the Self organizing map on the data using the unsupervised model over a number of epochs
-# for epoch_count in epoch_states:
-# epochs_left_to_train = epoch_count - prev_epoch_count
-
-weights = som_map.fit(training_data, epoch_states)
-
 plt.figure(figsize=(12,12))
-print('Plotting Results')
-for sub, key in enumerate(weights):
-    plt.subplot(5, 1, sub+1)
-    plt.title(key)
-    # for ii in tqdm(range(0, weights[key].shape[1])):
-    #     for jj in range(0, weights[key].shape[2]):
-    # w = weights[key][:, ii, jj]
-    # c=np.array([[max(0, w[0]), max(0, w[1]), max(0, w[2])]])
-    # plt.scatter(x=ii, y=jj)#, c=c)
-    # plt.scatter(T['X'], T['Y'], c=X[1])
-    print(weights[key])
-    plt.imshow(np.transpose(weights[key], [1, 2, 0]))
+for row, sigma in enumerate(sigma_list):
+    print('row: ', row)
+    #Generate an n_output x n_output (square) feature map
+    som_map = SOM(n_input, n_output, init_learn_rate, sigma, max_epochs)
+
+    #Train the Self organizing map on the data using the unsupervised model over a number of epochs
+    weights = som_map.fit(training_data, epoch_states)
+
+    for col, key in enumerate(weights):
+        ind = col+1 + 5*row
+        plt.subplot(len(sigma_list), len(epoch_states), ind)
+        if col == 0:
+            plt.ylabel('sigma=%.1f' % sigma)
+        if row == 0:
+            plt.title(key)
+        plt.imshow(np.transpose(weights[key], [1, 2, 0]))
 plt.show()
-# current_train_state.append(som.get_state())
-#
-# prev_epoch_count = prev_epoch_count + epochs_left_to_train
 
