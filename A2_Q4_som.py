@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
+from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
 class SOM:
@@ -17,13 +18,13 @@ class SOM:
         n_inputs: int
         number of input nodes
         n_outputs_x: int
-        number output nodes in X and Y direction
+            number output nodes in X and Y direction
         init_learn_rate: float
-        the initial learning rate parameter which tapers off per epoch
+            the initial learning rate parameter which tapers off per epoch
         init_neighborhood_sigma : init (default 0)
-        the initial Neighborhood value used to shrink update between epochs.
-        Default = 0 (Winner take all strategy)
-            =/= 0 (Cooperative Strategy)
+            the initial Neighborhood value used to shrink update between epochs.
+            Default = 0 (Winner take all strategy)
+                =/= 0 (Cooperative Strategy)
 
         n_epochs: int
         the max amoutn of training epochs used for the output map.
@@ -51,16 +52,8 @@ class SOM:
         self.current_epoch = 0
 
         #Set the current state to the initial learning rate
-        self.current_learn_rate = init_learn_rate
+        self.learn_rate = init_learn_rate
 
-
-    def updateSigmaNeighbourhood(self):
-        """
-        Updated the value of the spread (sigma) in the gaussian neighborhood around a winner node.
-        Uses the internal state of the Self organizing maps current nodee as well as
-        """
-        new_sigma = self.init_sigma * np.exp(-(self.current_epoch / self.n_epochs))
-        return new_sigma
 
     def get_distance(self, a, b):
         """
@@ -76,13 +69,6 @@ class SOM:
         """
         return np.linalg.norm(a[:, None, None] - b, axis=0)
 
-    def updateLearningRate(self):
-        """
-        Update the learning rate using a time varying decaying exponential using the current epoch
-        and the max amount of epochs
-        """
-        self.current_learn_rate = self.init_learn_rate * np.exp(- self.current_epoch / self.n_epochs)
-
 
     def getNeighbourhood(self, winning_index):
         """
@@ -97,23 +83,16 @@ class SOM:
             2x1 vector of position of the target node in the output map
 
         """
-        sigma = self.updateSigmaNeighbourhood()
         neighbourhood = (
                 np.exp(
-                    # -np.linalg.norm(self.neighbourhood_indices - winning_index[:, None, None])
                     -self.get_distance(winning_index, self.neighbourhood_indices)
-                    / (2*sigma^2)
+                    / (2*self.sigma**2)
                     )
                 )
-        print('NEI SCALE: ', neighbourhood.shape)
-        print(neighbourhood)
-        # print('winn: ', winning_index)
-        # print(neighbourhood.shape)
-        print('winning index scale should be 1: ', neighbourhood[winning_index[0], winning_index[1]])
         return neighbourhood
 
 
-    def fit(self, training_data, n_epochs=None):
+    def fit(self, training_data, epochs_to_return=None):
         """
         Train the map over the given set of cycles
 
@@ -121,28 +100,39 @@ class SOM:
         -------------
         training_data: np.array (r,g,b)
             A 3x1 input array with the data values to train the map
-
-        number_epochs: int
-            The number of desired training epochs to progress over the current map
         """
-        if n_epochs is None:
-            n_epochs = self.n_epochs
+        if epochs_to_return is not None:
+            epoch_weights = {}
 
-        for data_point in training_data:
-            # Step 3: Get distances and select winning index
-            dist = self.get_distance(data_point, self.weights)
+        print('Running %i epochs of training...' % self.n_epochs)
+        for self.current_epoch in tqdm(range(0, self.n_epochs)):
+            # Update the learning rate using a time varying decaying exponential using the current epoch
+            # and the max amount of epochs
+            self.learn_rate = self.init_learn_rate * np.exp(- self.current_epoch / self.n_epochs)
 
-            # argmin returns the index on the flatten array, unravel_index returns the 2d value
-            min_index = np.asarray(np.unravel_index(np.argmin(dist), dist.shape))
-            print('WINNING min index: ', min_index)
-            print('min dist value: ', dist[min_index[0], min_index[1]])
+            # Updated the value of the spread (sigma) in the gaussian neighborhood around a winner node.
+            # Uses the internal state of the Self organizing maps current nodee as well as
+            self.sigma = self.init_sigma * np.exp(-(self.current_epoch / self.n_epochs))
 
-            # Step 4: Update weight matrix
-            neigbhourhood = self.getNeighbourhood(min_index)
+            for data_point in training_data:
+                # Step 3: Get distances and select winning index
+                dist = self.get_distance(data_point, self.weights)
 
-            # Step 5: Update learning rate and neighbourhood
-            raise Exception
-        self.current_epoch += 1
+                # argmin returns the index on the flatten array, unravel_index returns the 2d value
+                min_index = np.asarray(np.unravel_index(np.argmin(dist), dist.shape))
+
+                # Step 4: Update weight matrix
+                neighbourhood = self.getNeighbourhood(min_index)
+                self.weights = self.weights + self.learn_rate*dist*neighbourhood
+
+            if epochs_to_return is not None:
+                if self.current_epoch in epochs_to_return:
+                    epoch_weights['epoch_%i' % self.current_epoch] = self.weights
+
+            self.current_epoch += 1
+
+        if epochs_to_return is not None:
+            return epoch_weights
 
 
     def get_state(self):
@@ -203,22 +193,36 @@ init_learn_rate = 0.8
 init_neighborhood = 0.1
 max_epochs = 1000
 
-sigma_list = [1, 10 ,30, 50, 70]
-epoch_states = [20, 40, 100, 1000]
+sigma_list = [0.8, 1, 10 ,30, 50, 70]
+epoch_states = [0, 20, 40, 100, 1000]
 
 # Get a series of output maps for each sigma_list value and append the map to a resultant output weight map we store
 # For later output and viewing.
 # for sigma in sigma_list:
 sigma = 0.8
-    #Generate an n_output x n_output (square) feature map
+#Generate an n_output x n_output (square) feature map
 som_map = SOM(n_input, n_output, init_learn_rate, sigma, max_epochs)
-# prev_epoch_count = 0 #Prev num epochs completed
 
 #Train the Self organizing map on the data using the unsupervised model over a number of epochs
 # for epoch_count in epoch_states:
 # epochs_left_to_train = epoch_count - prev_epoch_count
 
-som_map.fit(training_data)
+weights = som_map.fit(training_data, epoch_states)
+
+plt.figure(figsize=(12,12))
+print('Plotting Results')
+for sub, key in enumerate(weights):
+    plt.subplot(5, 1, sub+1)
+    plt.title(key)
+    # for ii in tqdm(range(0, weights[key].shape[1])):
+    #     for jj in range(0, weights[key].shape[2]):
+    # w = weights[key][:, ii, jj]
+    # c=np.array([[max(0, w[0]), max(0, w[1]), max(0, w[2])]])
+    # plt.scatter(x=ii, y=jj)#, c=c)
+    # plt.scatter(T['X'], T['Y'], c=X[1])
+    print(weights[key])
+    plt.imshow(np.transpose(weights[key], [1, 2, 0]))
+plt.show()
 # current_train_state.append(som.get_state())
 #
 # prev_epoch_count = prev_epoch_count + epochs_left_to_train
