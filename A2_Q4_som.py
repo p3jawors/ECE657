@@ -107,6 +107,10 @@ class SOM:
 
         print('Running %i epochs of training with sigma %.1f...' % (self.n_epochs, self.init_sigma))
         for self.current_epoch in tqdm(range(0, self.n_epochs)):
+            if epochs_to_return is not None:
+                if self.current_epoch in epochs_to_return:
+                    epoch_weights['epoch_%i' % (self.current_epoch+1)] = self.weights
+
             # Update the learning rate using a time varying decaying exponential using the current epoch
             # and the max amount of epochs
             self.learn_rate = self.init_learn_rate * np.exp(- self.current_epoch / self.n_epochs)
@@ -115,6 +119,7 @@ class SOM:
             # Uses the internal state of the Self organizing maps current nodee as well as
             self.sigma = self.init_sigma * np.exp(-(self.current_epoch / self.n_epochs))
 
+            np.random.shuffle(training_data)
             for data_point in training_data:
                 # Step 3: Get distances and select winning index
                 dist = self.get_distance(data_point, self.weights)
@@ -126,10 +131,6 @@ class SOM:
                 neighbourhood = self.getNeighbourhood(min_index)
                 diff = data_point[:, None, None] - self.weights
                 self.weights = self.weights + self.learn_rate*neighbourhood*(diff)
-
-            if epochs_to_return is not None:
-                if self.current_epoch in epochs_to_return:
-                    epoch_weights['epoch_%i' % (self.current_epoch+1)] = self.weights
 
             self.current_epoch += 1
 
