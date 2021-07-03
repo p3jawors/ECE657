@@ -38,9 +38,9 @@ class SOM:
         self.n_epochs = n_epochs
 
         #intialize weights and other params that get adjusted during training should have a n_input x (n_output x n_output) tensor for our matrix
-        weight_init_range = 0.1
+        weight_init_range = 1
         np.random.seed(seed)
-        self.weights = np.random.uniform(-weight_init_range, weight_init_range, (self.n_inputs, self.n_outputs, self.n_outputs))
+        self.weights = np.random.uniform(0, weight_init_range, (self.n_inputs, self.n_outputs, self.n_outputs))
         self.neighbourhood_indices = np.zeros((2, n_outputs, n_outputs))
         for ii in range(0, self.n_outputs):
             for jj in range(0, self.n_outputs):
