@@ -158,8 +158,8 @@ conv_histories.append(convB.fit(
         validation_data=(test_x, test_y),
         verbose=verbose))
 times.append(start-timeit.default_timer())
-print('CovA runtime: %.2f': times[0])
-print('CovB runtime: %.2f': times[1])
+print('CovA runtime: %.2f', times[0])
+print('CovB runtime: %.2f', times[1])
 
 plot_training_results(conv_histories, cols, labels, title='Comparing Conv Models')
 
