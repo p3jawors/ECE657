@@ -84,6 +84,7 @@ def plot_training_results(histories, cols, labels, title):
         plt.plot(hist.history['accuracy'], color=cols[ii], label='train %s' % labels[ii])
         plt.plot(hist.history['val_accuracy'], color=cols[ii], label='test %s' % labels[ii], linestyle='--')
         plt.legend()
+    plt.savefig('Q1_%s.png' % title)
     plt.show()
 
 #======================= QUESTIONS =========================
@@ -92,6 +93,7 @@ def plot_training_results(histories, cols, labels, title):
 # explain why using softmax outputlayer
 
 # MLP changing n_layers
+print('Running MLP varying n_layers')
 n_layers = [1, 2, 3, 4, 5]
 cols = ['r', 'b', 'g', 'y', 'm']
 labels = []
@@ -109,6 +111,7 @@ for ii in n_layers:
 
 plot_training_results(histories, cols, labels, title='Varying n_layers')
 
+print('Running MLP varying n_neurons')
 # MLP changing neurons
 n_neurons = [64, 128, 256, 512, 1024]
 cols = ['r', 'b', 'g', 'y', 'm']
@@ -127,13 +130,16 @@ for ii in n_neurons:
 
 plot_training_results(histories, cols, labels, title='Varying n_neurons')
 
+print('Running Conv comparing networks')
 # Run the two conv models
 convA = conv_modelA(learning_rate)
 convB = conv_modelB(learning_rate)
 cols = ['b', 'g']
 labels = ['ConvA', 'ConvB']
 conv_histories = []
+times = []
 
+start = timeit.default_timer()
 conv_histories.append(convA.fit(
         train_x,
         train_y,
@@ -141,7 +147,9 @@ conv_histories.append(convA.fit(
         batch_size=batch_size,
         validation_data=(test_x, test_y),
         verbose=verbose))
+times.append(start-timeit.default_timer())
 
+start = timeit.default_timer()
 conv_histories.append(convB.fit(
         train_x,
         train_y,
@@ -149,6 +157,9 @@ conv_histories.append(convB.fit(
         batch_size=batch_size,
         validation_data=(test_x, test_y),
         verbose=verbose))
+times.append(start-timeit.default_timer())
+print('CovA runtime: %.2f': times[0])
+print('CovB runtime: %.2f': times[1])
 
 plot_training_results(conv_histories, cols, labels, title='Comparing Conv Models')
 
