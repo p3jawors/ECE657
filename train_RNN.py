@@ -1,6 +1,7 @@
 # import required packages
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 
 # saved dataset to data folder
@@ -51,14 +52,35 @@ def generate_train_test_split():
     np.savetxt("data/train_data_RNN.csv", train, delimiter=",")
     np.savetxt("data/test_data_RNN.csv", test, delimiter=",")
 
-generate_train_test_split()
+# load the dataset we generated above
+def load_data():
+    with open('data/train_data_RNN.csv', newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        x = []
+        y = []
+        for ii, row in enumerate(reader):
+            x.append(row[1:])
+            y.append(row[0])
+        x = np.asarray(x)
+        y = np.asarray(y)
+        print('loaded train data: ', x.shape)
+        print('loaded train labels: ', y.shape)
+    return (x, y)
 
-# YOUR IMPLEMENTATION
-# Thoroughly comment your code to make it easy to follow
+# TODO
+def load_model():
+    pass
 
+# train_labels = generate_train_test_split()
 
-# if __name__ == "__main__": 
+if __name__ == "__main__":
 	# 1. load your training data
+        train_data, train_labels = load_data()
+
+        # TODO normalize our data
+
+        # load our model
+        model = load_model()
 
 	# 2. Train your network
 	# 		Make sure to print your training loss within training to show progress
