@@ -14,8 +14,35 @@ def create_dirs(folders):
             print(f"Creating missing directory {folder}")
             os.makedirs(folder)
 
+def plot_training_results(histories, cols, labels, title):
+    plt.figure()
+    plt.title(title)
+    print('len histories: ', len(histories))
+    for ii, hist in enumerate(histories):
+        # plot loss
+        plt.subplot(211)
+        plt.title('Loss')
+        if 'loss' in hist.history:
+            plt.plot(hist.history['loss'], color=cols[ii], label='train %s' % labels[ii])
+        if 'val_loss' in hist.history:
+            plt.plot(hist.history['val_loss'], color=cols[ii], label='val %s' % labels[ii], linestyle='--')
+        plt.legend()
+        # plot accuracy
+        plt.subplot(212)
+        plt.title('Accuracy')
+        if 'accuracy' in hist.history:
+            plt.plot(hist.history['accuracy'], color=cols[ii], label='train %s' % labels[ii])
+        if 'val_accuracy' in hist.history:
+            plt.plot(hist.history['val_accuracy'], color=cols[ii], label='val %s' % labels[ii], linestyle='--')
+        plt.legend()
+    plt.savefig('Q1_%s.png' % title)
+    plt.show()
+
+
 # saved dataset to data folder
 def generate_train_test_split(verbose=True):
+    if verbose:
+        print('--Generating train/test split--')
     # read the csv file
     with open('data/q2_dataset.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
@@ -74,13 +101,15 @@ def generate_train_test_split(verbose=True):
 
 # load the dataset we generated above
 def load_data(filename, verbose=True):
+    if verbose:
+        print(f"--Loading dataset from {filename}--")
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         x = []
         y = []
         for ii, row in enumerate(reader):
-            x.append(row[1:])
-            y.append(row[0])
+            x.append([float(val) for val in row[1:]])
+            y.append(float(row[0]))
         x = np.asarray(x)
         y = np.asarray(y)
         if verbose:
@@ -88,4 +117,16 @@ def load_data(filename, verbose=True):
             print('loaded labels: ', y.shape)
     return (x, y)
 
+# def normalize_data(data, verbose=True):
+#     if verbose:
+#         print('--Normalizing Data--')
+#         print('data shape: ', data.shape)
+
+def dataset_2d_to_3d(dataset, verbose=True):
+    # our dataset has 3 days of 4 features, reshape
+    # for 3d layers to be in shape (n_samples, n_timesteps_per_sample, n_features)
+    reshaped = np.reshape(dataset, (-1, 3, 4))
+    if verbose:
+        print(f"Reshaping dataset to be in shape of (n_sample, n_timesteps_per_sample, n_features): {reshaped.shape}")
+    return reshaped
 
