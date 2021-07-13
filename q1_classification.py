@@ -92,43 +92,43 @@ def plot_training_results(histories, cols, labels, title):
 # List preprocessing steps
 # explain why using softmax outputlayer
 
-# # MLP changing n_layers
-# print('Running MLP varying n_layers')
-# n_layers = [1, 2, 3, 4, 5]
-# cols = ['r', 'b', 'g', 'y', 'm']
-# labels = []
-# histories = []
-# for ii in n_layers:
-#     labels.append('%i Layers' % ii)
-#     model = sequential_model(learning_rate, ii, 512)
-#     histories.append(model.fit(
-#             train_x,
-#             train_y,
-#             epochs=n_epochs,
-#             batch_size=batch_size,
-#             validation_data=(test_x, test_y),
-#             verbose=verbose))
-#
-# plot_training_results(histories, cols, labels, title='Varying n_layers')
-#
-# print('Running MLP varying n_neurons')
-# # MLP changing neurons
-# n_neurons = [64, 128, 256, 512, 1024]
-# cols = ['r', 'b', 'g', 'y', 'm']
-# labels = []
-# histories = []
-# for ii in n_neurons:
-#     labels.append('%i Neurons' % ii)
-#     model = sequential_model(learning_rate, 2, ii)
-#     histories.append(model.fit(
-#             train_x,
-#             train_y,
-#             epochs=n_epochs,
-#             batch_size=batch_size,
-#             validation_data=(test_x, test_y),
-#             verbose=verbose))
-#
-# plot_training_results(histories, cols, labels, title='Varying n_neurons')
+# MLP changing n_layers
+print('Running MLP varying n_layers')
+n_layers = [1, 2, 3, 4, 5]
+cols = ['r', 'b', 'g', 'y', 'm']
+labels = []
+histories = []
+for ii in n_layers:
+    labels.append('%i Layers' % ii)
+    model = sequential_model(learning_rate, ii, 512)
+    histories.append(model.fit(
+            train_x,
+            train_y,
+            epochs=n_epochs,
+            batch_size=batch_size,
+            validation_data=(test_x, test_y),
+            verbose=verbose))
+
+plot_training_results(histories, cols, labels, title='Varying n_layers')
+
+print('Running MLP varying n_neurons')
+# MLP changing neurons
+n_neurons = [64, 128, 256, 512, 1024]
+cols = ['r', 'b', 'g', 'y', 'm']
+labels = []
+histories = []
+for ii in n_neurons:
+    labels.append('%i Neurons' % ii)
+    model = sequential_model(learning_rate, 2, ii)
+    histories.append(model.fit(
+            train_x,
+            train_y,
+            epochs=n_epochs,
+            batch_size=batch_size,
+            validation_data=(test_x, test_y),
+            verbose=verbose))
+
+plot_training_results(histories, cols, labels, title='Varying n_neurons')
 
 print('Running Conv comparing networks')
 # Run the two conv models
@@ -162,6 +162,3 @@ print('CovA runtime: %.2f', times[0])
 print('CovB runtime: %.2f', times[1])
 
 plot_training_results(conv_histories, cols, labels, title='Comparing Conv Models')
-
-# If we want to run inference...
-# _, acc = model.evaluate(test_x, test_y, verbose=verbose)
