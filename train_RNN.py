@@ -52,10 +52,10 @@ def load_model(model_name, verbose=True, **kwargs):
 if __name__ == "__main__":
     verbose = True
     # NOTE: uncomment to generate train/test split
-    # utils.generate_train_test_split(verbose=verbose)
+    # utils.generate_RNN_train_test_split(verbose=verbose)
 
     # 1. load your training data
-    train_data, train_labels = utils.load_data('data/train_data_RNN.csv', verbose=verbose)
+    train_data, train_labels = utils.load_RNN_data('data/train_data_RNN.csv', verbose=verbose)
 
     # Preprocess data
     # TODO look into what preprocessing we should be doing

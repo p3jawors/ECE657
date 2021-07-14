@@ -1,6 +1,5 @@
 # import required packages
 import utils
-import utils
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -19,7 +18,7 @@ if __name__ == "__main__":
     model = keras.models.load_model('models/RNN_model')
 
     # 2. Load your testing data
-    test_data, test_labels = utils.load_data('data/test_data_RNN.csv', verbose=verbose)
+    test_data, test_labels = utils.load_RNN_data('data/test_data_RNN.csv', verbose=verbose)
     test_data = utils.dataset_2d_to_3d(test_data, verbose=verbose)
 
     # 3. Run prediction on the test data and output required plot and loss

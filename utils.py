@@ -40,7 +40,7 @@ def plot_training_results(histories, cols, labels, title):
 
 
 # saved dataset to data folder
-def generate_train_test_split(verbose=True):
+def generate_RNN_train_test_split(verbose=True):
     if verbose:
         print('--Generating train/test split--')
     # read the csv file
@@ -100,7 +100,7 @@ def generate_train_test_split(verbose=True):
     np.savetxt("data/test_data_RNN.csv", test, delimiter=",")
 
 # load the dataset we generated above
-def load_data(filename, verbose=True):
+def load_RNN_data(filename, verbose=True):
     if verbose:
         print(f"--Loading dataset from {filename}--")
     with open(filename, newline='') as csvfile:
@@ -121,6 +121,13 @@ def load_data(filename, verbose=True):
 #     if verbose:
 #         print('--Normalizing Data--')
 #         print('data shape: ', data.shape)
+
+def mean_sub_var_div(dataset, binary, verbose=True):
+    # performs a mean subtraction and scales by the variance
+    # this shift the majority of data to -1 to 1
+    # if binary is false we scale once more to go to 0 to 1
+    # TODO
+
 
 def dataset_2d_to_3d(dataset, verbose=True):
     # our dataset has 3 days of 4 features, reshape
