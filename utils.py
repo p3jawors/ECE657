@@ -127,6 +127,7 @@ def mean_sub_var_div(dataset, binary, verbose=True):
     # this shift the majority of data to -1 to 1
     # if binary is false we scale once more to go to 0 to 1
     # TODO
+    return 0
 
 
 def dataset_2d_to_3d(dataset, verbose=True):
