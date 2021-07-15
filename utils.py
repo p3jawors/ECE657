@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
-import glob
 import re
 
 from sklearn.model_selection import train_test_split
@@ -172,13 +171,10 @@ def preprocess_NLP_data(dataframe,
                     language='english',
                     verbose = True):
 
-  preprocessed_df = dataframe.copy()
-
-  print(preprocessed_df)
-  column_names = list(preprocessed_df.columns)
-
-  preProcessed_list = []
-  show_debug = False
+  preprocessed_df = dataframe
+  if verbose is True:
+    print("Preprocessing Dataframe")
+    print(preprocessed_df)
 
    #Try different methods for stemming our words as part of prepcoessing
   if stemmer == 'porter':
@@ -188,31 +184,63 @@ def preprocess_NLP_data(dataframe,
   elif stemmer == 'lancaster':
     stemmer_obj = LancasterStemmer()
 
-  for index, row in preprocessed_df.iterrows():
-    for column in column_names:
+  row_count = 0
+  for i in preprocessed_df.itertuples():
+      row_count += 1
+      if(row_count > 6):
+        break
+      index = i.Index
+      column = 2
+      col = 'review'
+      #if verbose is True:
+      #  print("index " + str(index))
+
       if 'lowercase' in options:
-        preprocessed_df.at[index, column] = row[column].lower()
+        preprocessed_df.at[index, col] = i[column].lower()
+        if verbose is True:
+          print("lowercase: " + preprocessed_df.at[index, col])
+
 
       if 'punctuation' in options:
-        preprocessed_df.at[index, column] = \
-        "".join([char for char in preprocessed_df.at[index, column]
+        preprocessed_df.at[index, col] = \
+        "".join([char for char in preprocessed_df.at[index, col]
                  .encode('ascii','ignore')
                  .decode() if char not in string.punctuation])
+        if verbose is True:
+          print("punctuation: " + preprocessed_df.at[index, col])
+
 
       if 'tokenize' in options:
-        preprocessed_df.at[index, column] = \
-        nltk.word_tokenize(preprocessed_df.at[index, column])
+        preprocessed_df.at[index, col] = \
+        nltk.word_tokenize(preprocessed_df.at[index, col])
+
+        preprocessed_df.at[index, 'raw_word_count'] = len(preprocessed_df.at[index, col])
+        if verbose is True:
+          print("tokenized: " + str(preprocessed_df.at[index, col]))
+
 
       if 'stopwords' in options:
         stop_words = stopwords.words(language)
-        preprocessed_df.at[index, column] = \
-        [word for word in preprocessed_df.at[index, column] if word not in stop_words]
+        preprocessed_df.at[index, col] = \
+        [word for word in preprocessed_df.at[index, col] if word not in stop_words]
+
+        #track how many words we removed
+        preprocessed_df.at[index, 'pp_word_count'] = len(preprocessed_df.at[index, col])
+        if verbose is True:
+          print("stopwords: " + str(preprocessed_df.at[index, col]))
+
 
       if 'stem' in options:
-        preprocessed_df.at[index, column] = \
-        [stemmer_obj.stem(word) for word in preprocessed_df.at[index, column]]
+        preprocessed_df.at[index, col] = \
+        [stemmer_obj.stem(word) for word in preprocessed_df.at[index, col]]
+        if verbose is True:
+          print("stemming: " + str(preprocessed_df.at[index, col]))
 
-    return preprocessed_df
+
+  if verbose is True:
+    print(preprocessed_df)
+
+  return preprocessed_df
 
 #File data is distributed into folders in a gross way.
 
@@ -229,7 +257,7 @@ def preprocess_NLP_data(dataframe,
 
 def load_NLP_data(path_to_data, verbose=True):
 
-    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'sentiment':[]}
+    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'sentiment':[]}
     #Load in the positive data values first
     path_to_pos =  path_to_data + 'pos'
     path_to_neg =  path_to_data + 'neg'
@@ -256,11 +284,13 @@ def load_NLP_data(path_to_data, verbose=True):
             #encode sentiment based on data using
             train_data_raw_dict['sentiment'].append(target_path[1])
 
-            with open(os.path.join(os.getcwd() + "/" + target_path[0] + "/", filename), 'r') as f:
+            #pre/post processing statistics placeholders
+            train_data_raw_dict['raw_word_count'].append(0)
+            train_data_raw_dict['pp_word_count'].append(0)
 
+            with open(os.path.join(os.getcwd() + "/" + target_path[0] + "/", filename), 'r') as f:
                 text_string = f.readline()
                 train_data_raw_dict['review'].append(text_string)
-
                 if verbose is True:
                     print("Extracted " + target_path[0] + filename)
 

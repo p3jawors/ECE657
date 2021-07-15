@@ -56,10 +56,10 @@ if __name__ == "__main__":
 
 
     # 1. load your training data - stupid folder structure with this dataset
-    raw_train_data = utils.load_NLP_data('data/aclImdb/train/', verbose=True)
+    raw_train_data = utils.load_NLP_data('data/aclImdb/train/', verbose=False)
 
     # Preprocess data - I gotchu boo
-    train_data = utils.preprocess_NLP_data(raw_train_data, verbose=verbose)
+    train_data = utils.preprocess_NLP_data(raw_train_data, verbose=False)
 
     # load our model
     # define the model name and the arguments that go along with it here
