@@ -3,6 +3,8 @@ import utils
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import pandas as pd
+import os
 
 from keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
@@ -55,28 +57,22 @@ if __name__ == "__main__":
     # utils.generate_NLP_train_test_split(verbose=verbose)
 
 
-    # 1. load your training data - stupid folder structure with this dataset
-    raw_train_data = utils.load_NLP_data('data/aclImdb/train/', verbose=False)
+    try:
+        print("attempting to find previously trained preprocessing")
+        train_data = pd.read_csv(os.path.join(os.getcwd(), 'data/NLP_Preproc.csv'))
+        print("DATA FOUND YEEEE BOII")
+        print(train_data)
+    except IOError:
+        print("No preproced data, raw load and preproc commencing")
+        # 1. load your training data - stupid folder structure with this dataset
+        raw_train_data = utils.load_NLP_data('data/aclImdb/train/', verbose=False)
 
-    # Preprocess data - I gotchu boo
-    train_data = utils.preprocess_NLP_data(raw_train_data, verbose=False)
+        # Preprocess data - I gotchu boo
+        train_data = utils.preprocess_NLP_data(raw_train_data, verbose=False)
 
-    # load our model
-    # define the model name and the arguments that go along with it here
-    # model_name = 'vanilla_lstm'
-    # model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 50}
-
-    #model_name = 'vanilla_batch_norm_lstm'
-    #model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 100}
-
-    #model = load_model(model_name, verbose=verbose, **model_args)
-
+        #Save preprocessed data to save time between runs/tuning (~2 min per run)
+        train_data.to_csv(os.path.join(os.getcwd(), 'data/NLP_Preproc.csv'))
     # 2. Train your network
-    #n_epochs = 10
-    #batch_size = 8
-    #validation_split = 0.2
-    #if verbose:
-    #    print('training data shape: ', train_data.shape)
 
    # history = model.fit(
    #         train_data,
