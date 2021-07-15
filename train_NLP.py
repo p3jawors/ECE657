@@ -6,6 +6,9 @@ import tensorflow as tf
 import pandas as pd
 import os
 
+from gensim.test.utils import common_texts
+from gensim.models import Word2Vec
+
 from keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from keras.models import Sequential
@@ -53,6 +56,9 @@ def load_model(model_name, verbose=True, **kwargs):
 
 if __name__ == "__main__":
     verbose = True
+    #Best random seed to make things more consistent :P
+    random_seed = 1337
+
     # NOTE: uncomment to generate train/test split
     # utils.generate_NLP_train_test_split(verbose=verbose)
 
@@ -72,7 +78,52 @@ if __name__ == "__main__":
 
         #Save preprocessed data to save time between runs/tuning (~2 min per run)
         train_data.to_csv(os.path.join(os.getcwd(), 'data/NLP_Preproc.csv'))
-    # 2. Train your network
+
+    # 2. Train your emedding using word2vec
+    # Continous bag of words model
+    try:
+        print("attempting to find previous trained CBOW models")
+        #model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'models/cbow_model.blob')) #uncomment for production
+        model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
+        print("Bag of Words found!")
+
+    except IOError:
+        #Using params from tutorial will fine tune with grid search after
+        min_count = 10
+        learning_rate = 0.03
+        min_learning_rate = 0.0007
+        window = 2
+        vec_size = 300
+        sample = 6e-5
+        neg_samples = 20
+
+        model_cbow  = utils.train_NLP_embedding(train_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "CBOW",
+                                              random_seed, verbose)
+
+        print("No existing model found: Generating CBOW embedding model")
+        model_cbow.save(os.path.join(os.getcwd(), 'models/cbow_model.blob'))
+
+    ##Skip o gram model
+    try:
+        print("Attempting to find previous trained Skip-o-=gram models")
+        #model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'models/sg_model.blob')) #uncomment for production
+        model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
+        print("Skip-o-gram found!")
+
+    except IOError:
+        print("No existing model found: Generating skip-o-gram embedding model")
+        #Using params from tutorial will fine tune with grid search after
+        min_count = 10
+        learning_rate = 0.03
+        min_learning_rate = 0.0007
+        window = 2
+        vec_size = 300
+        sample = 6e-5
+        neg_samples = 20
+
+        model_sg  = utils.train_NLP_embedding(train_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "Skip-o-gram",
+                                              random_seed, verbose)
+        model_sg.save(os.path.join(os.getcwd(), 'models/sg_model.blob'))
 
    # history = model.fit(
    #         train_data,

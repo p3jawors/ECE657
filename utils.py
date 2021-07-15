@@ -10,6 +10,7 @@ from tqdm.auto import tqdm
 
 from sklearn.model_selection import train_test_split
 
+import multiprocessing
 from gensim.test.utils import common_texts
 from gensim.models import Word2Vec
 
@@ -261,7 +262,7 @@ def preprocess_NLP_data(dataframe,
 
 def load_NLP_data(path_to_data, verbose=True):
 
-    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'sentiment':[]}
+    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'WordVectors':[] ,'sentiment':[]}
     #Load in the positive data values first
     path_to_pos =  path_to_data + 'pos'
     path_to_neg =  path_to_data + 'neg'
@@ -306,4 +307,65 @@ def load_NLP_data(path_to_data, verbose=True):
 
     pbar.close()
     return train_data_raw_df
+
+
+"""
+  Ingest the preprocessed dataframe into word2vec and perform CBOW and Skip-Agram to generate
+  two embedding models, then use that for training our final classifier
+
+  Good resoource for this: https://www.kaggle.com/pierremegret/gensim-word2vec-tutorial
+
+  Direct doc since alot of tutorials are outdate. size->vector_size. RTFM I suppose
+  https://radimrehurek.com/gensim/models/word2vec.html
+
+"""
+def train_NLP_embedding(dataframe,
+                        feature_size,
+                        window,
+                        learning_rate,
+                        min_learn_rate,
+                        min_count,
+                        negative_sample_rate,
+                        algorithm,
+                        rnd_seed,
+                        verbose):
+
+  dict_algo = {"Skip-o-gram":1, "CBOW":0}
+
+  if verbose is True:
+      print("\nAlgo used: " + algorithm)
+      print("Params: VecSize: "+ str(feature_size) + " Window:" + str(window)+ " Learn Rate:"+ str(learning_rate) + " Min learn Rate:"+ str(min_learn_rate))
+      print("        Min_count:"+ str(min_count) +  " Neg Sample Rate: "+ str(negative_sample_rate) + "\n")
+
+  cores = multiprocessing.cpu_count()
+
+  #Initialize model
+  model = Word2Vec(sentences = dataframe['review'],
+                    min_count=min_count,
+                   vector_size=feature_size,
+                   window=window,
+                   alpha=learning_rate,
+                   min_alpha=min_learn_rate,
+                   negative=negative_sample_rate,
+                   sg= dict_algo[algorithm],
+                   workers=cores-1)
+
+  #build vocab of the model
+
+  #with tqdm(total= 25000 ) as pbar:
+  #  row_count = 0
+  #  for row in dataframe['review#']:
+      #if verbose is True:
+      #  print("Training" + str(row)+ "\n" )
+
+#      row_count += 1
+#      pbar.update(1)
+#      model.build_vocab(row)
+#      #Testing
+ #     if row_count >= 3:
+ #           break
+
+ # pbar.close()
+  return model
+
 
