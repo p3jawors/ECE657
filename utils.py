@@ -3,6 +3,10 @@ import csv
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import pandas as pd
+import glob
+import re
+
 from sklearn.model_selection import train_test_split
 
 def create_dirs(folders):
@@ -137,4 +141,59 @@ def dataset_2d_to_3d(dataset, verbose=True):
     if verbose:
         print(f"Reshaping dataset to be in shape of (n_sample, n_timesteps_per_sample, n_features): {reshaped.shape}")
     return reshaped
+
+#File data is distributed into folders in a gross way.
+
+# data/adlImdb/train/pos   - positive data strings
+# data/adlImdb/train/neg   - negative data strings
+# data/adlImdb/train/unsup       - untaged datastrings usef for unsupervised learning
+
+# Each filename contains the ID of the movie and the rating as follows
+# ID_stars.txt
+
+"""
+   Given the input path, run through the bonkos folder structure used
+"""
+
+def load_NLP_data(path_to_data, verbose=True):
+
+    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'sent':[]}
+    #Load in the positive data values first
+    path_to_pos =  path_to_data + 'pos'
+    path_to_neg =  path_to_data + 'neg'
+
+
+    list_of_paths = [path_to_pos, path_to_neg]
+
+
+    sentiment = 1
+    for target_path in list_of_paths:
+        abs_path = os.path.join(os.getcwd(), target_path)
+
+        for filename in os.listdir(abs_path):
+
+            split_filename = re.split('_|\.txt', filename)
+            rating = split_filename[0]
+            film_id = split_filename[1]
+
+            train_data_raw_dict['id'].append(film_id)
+            train_data_raw_dict['rating'].append(rating)
+            train_data_raw_dict['sent'].append(sentiment)
+
+            with open(os.path.join(os.getcwd() + "/" + target_path + "/", filename), 'r') as f:
+
+                text_string = f.readline()
+                train_data_raw_dict['review'].append(text_string)
+
+                if verbose is True:
+                    print("Extracted " + target_path + filename)
+                    #print(filename + ";Text: " + text_string)
+
+            #Me being lazy right now. Two folders so yeah
+            sentiment = 0
+    #if verbose is True:
+    #    print(train_data_raw_dict['review'])
+    train_data_raw_df = pd.DataFrame(data=train_data_raw_dict)
+
+    return train_data_raw_df
 

@@ -54,12 +54,10 @@ if __name__ == "__main__":
     # NOTE: uncomment to generate train/test split
     # utils.generate_NLP_train_test_split(verbose=verbose)
 
-    # 1. load your training data
-    train_data, train_labels = utils.load_NLP_data('data/train_data_NLP.csv', verbose=verbose)
 
-    # Preprocess data
-    # TODO look into what preprocessing we should be doing
-    train_data = utils.dataset_2d_to_3d(train_data, verbose=verbose)
+    # 1. load your training data - stupid folder structure with this dataset
+    raw_train_data = utils.load_NLP_data('data/aclImdb/train/', verbose=False)
+
 
     # load our model
     # define the model name and the arguments that go along with it here
