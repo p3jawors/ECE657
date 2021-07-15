@@ -9,6 +9,23 @@ import re
 
 from sklearn.model_selection import train_test_split
 
+from gensim.test.utils import common_texts
+from gensim.models import Word2Vec
+
+import nltk
+from nltk import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+from nltk.stem.snowball import SnowballStemmer
+from nltk.stem.lancaster import LancasterStemmer
+
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
+import string
+
+
 def create_dirs(folders):
     if not isinstance(folders, list):
         folders = [folders]
@@ -141,6 +158,58 @@ def dataset_2d_to_3d(dataset, verbose=True):
     if verbose:
         print(f"Reshaping dataset to be in shape of (n_sample, n_timesteps_per_sample, n_features): {reshaped.shape}")
     return reshaped
+
+
+
+def preprocess_NLP_data(dataframe,
+                    options=['lowercase',
+                             'punctuation',
+                             'tokenize',
+                             'stopwords',
+                             'stem'],
+                    stemmer='porter',
+                    language='english',
+                    verbose = True):
+
+  preprocessed_df = dataframe.copy()
+  column_names = list(preprocessed_df.columns)
+
+  preProcessed_list = []
+  show_debug = False
+
+   #Try different methods for stemming our words as part of prepcoessing
+  if stemmer == 'porter':
+    stemmer_obj = PorterStemmer()
+  elif stemmer == 'snowball':
+    stemmer_obj = SnowballStemmer()
+  elif stemmer == 'lancaster':
+    stemmer_obj = LancasterStemmer()
+
+  for index, row in preprocessed_df.iterrows():
+    for column in column_names:
+      if 'lowercase' in options:
+        preprocessed_df.at[index, column] = row[column].lower()
+
+      if 'punctuation' in options:
+        preprocessed_df.at[index, column] = \
+        "".join([char for char in preprocessed_df.at[index, column]
+                 .encode('ascii','ignore')
+                 .decode() if char not in string.punctuation])
+
+      if 'tokenize' in options:
+        preprocessed_df.at[index, column] = \
+        nltk.word_tokenize(preprocessed_df.at[index, column])
+
+      if 'stopwords' in options:
+        stop_words = stopwords.words(language)
+        preprocessed_df.at[index, column] = \
+        [word for word in preprocessed_df.at[index, column] if word not in stop_words]
+
+      if 'stem' in options:
+        preprocessed_df.at[index, column] = \
+        [stemmer_obj.stem(word) for word in preprocessed_df.at[index, column]]
+
+    return preprocessed_df
 
 #File data is distributed into folders in a gross way.
 
