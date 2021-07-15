@@ -66,34 +66,34 @@ if __name__ == "__main__":
     # model_name = 'vanilla_lstm'
     # model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 50}
 
-    model_name = 'vanilla_batch_norm_lstm'
-    model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 100}
+    #model_name = 'vanilla_batch_norm_lstm'
+    #model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 100}
 
-    model = load_model(model_name, verbose=verbose, **model_args)
+    #model = load_model(model_name, verbose=verbose, **model_args)
 
     # 2. Train your network
-    n_epochs = 10
-    batch_size = 8
-    validation_split = 0.2
-    if verbose:
-        print('training data shape: ', train_data.shape)
+    #n_epochs = 10
+    #batch_size = 8
+    #validation_split = 0.2
+    #if verbose:
+    #    print('training data shape: ', train_data.shape)
 
-    history = model.fit(
-            train_data,
-            train_labels,
-            epochs=n_epochs,
-            batch_size=batch_size,
-            validation_split=validation_split,
-            verbose=True)
+   # history = model.fit(
+   #         train_data,
+   #         train_labels,
+   #         epochs=n_epochs,
+   #         batch_size=batch_size,
+   #         validation_split=validation_split,
+   #         verbose=True)
 
-    utils.plot_training_results(
-            histories=[history],
-            cols=['r'],
-            labels=[model_name],
-            title='RNN Model Training')
+   # utils.plot_training_results(
+   #         histories=[history],
+   #         cols=['r'],
+   #         labels=[model_name],
+   #         title='RNN Model Training')
 
-    # 		Make sure to print your training loss within training to show progress
-    # 		Make sure you print the final training loss
+   # 		Make sure to print your training loss within training to show progress
+   # 		Make sure you print the final training loss
 
-    # 3. Save your model
-    model.save('models/RNN_model')
+   # 3. Save your model
+   # model.save('models/nlp_embedding_model')
