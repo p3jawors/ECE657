@@ -6,6 +6,8 @@ import os
 import pandas as pd
 import re
 
+from tqdm.auto import tqdm
+
 from sklearn.model_selection import train_test_split
 
 from gensim.test.utils import common_texts
@@ -172,8 +174,12 @@ def preprocess_NLP_data(dataframe,
                     verbose = True):
 
   preprocessed_df = dataframe
+
+  row_range = len(preprocessed_df['review'])
+
+
+  print("Preprocessing Dataframe")
   if verbose is True:
-    print("Preprocessing Dataframe")
     print(preprocessed_df)
 
    #Try different methods for stemming our words as part of prepcoessing
@@ -185,61 +191,59 @@ def preprocess_NLP_data(dataframe,
     stemmer_obj = LancasterStemmer()
 
   row_count = 0
-  for i in preprocessed_df.itertuples():
-      row_count += 1
-      if(row_count > 6):
-        break
-      index = i.Index
-      column = 2
-      col = 'review'
-      #if verbose is True:
-      #  print("index " + str(index))
+  with tqdm(total= len(preprocessed_df['review'])) as pbar:
+    for i in preprocessed_df.itertuples():
+        pbar.update(1)
+        index = i.Index
+        column = 2
+        col = 'review'
 
-      if 'lowercase' in options:
-        preprocessed_df.at[index, col] = i[column].lower()
-        if verbose is True:
-          print("lowercase: " + preprocessed_df.at[index, col])
+        if 'lowercase' in options:
+          preprocessed_df.at[index, col] = i[column].lower()
+          if verbose is True:
+            print("\nlowercase: " + preprocessed_df.at[index, col]+ "\n")
 
 
-      if 'punctuation' in options:
-        preprocessed_df.at[index, col] = \
-        "".join([char for char in preprocessed_df.at[index, col]
-                 .encode('ascii','ignore')
-                 .decode() if char not in string.punctuation])
-        if verbose is True:
-          print("punctuation: " + preprocessed_df.at[index, col])
+        if 'punctuation' in options:
+          preprocessed_df.at[index, col] = \
+          "".join([char for char in preprocessed_df.at[index, col]
+                   .encode('ascii','ignore')
+                   .decode() if char not in string.punctuation])
+          if verbose is True:
+            print("punctuation: " + preprocessed_df.at[index, col] + "\n")
 
 
-      if 'tokenize' in options:
-        preprocessed_df.at[index, col] = \
-        nltk.word_tokenize(preprocessed_df.at[index, col])
+        if 'tokenize' in options:
+          preprocessed_df.at[index, col] = \
+          nltk.word_tokenize(preprocessed_df.at[index, col])
 
-        preprocessed_df.at[index, 'raw_word_count'] = len(preprocessed_df.at[index, col])
-        if verbose is True:
-          print("tokenized: " + str(preprocessed_df.at[index, col]))
-
-
-      if 'stopwords' in options:
-        stop_words = stopwords.words(language)
-        preprocessed_df.at[index, col] = \
-        [word for word in preprocessed_df.at[index, col] if word not in stop_words]
-
-        #track how many words we removed
-        preprocessed_df.at[index, 'pp_word_count'] = len(preprocessed_df.at[index, col])
-        if verbose is True:
-          print("stopwords: " + str(preprocessed_df.at[index, col]))
+          preprocessed_df.at[index, 'raw_word_count'] = len(preprocessed_df.at[index, col])
+          if verbose is True:
+            print("tokenized: " + str(preprocessed_df.at[index, col]) + "\n" )
 
 
-      if 'stem' in options:
-        preprocessed_df.at[index, col] = \
-        [stemmer_obj.stem(word) for word in preprocessed_df.at[index, col]]
-        if verbose is True:
-          print("stemming: " + str(preprocessed_df.at[index, col]))
+        if 'stopwords' in options:
+          stop_words = stopwords.words(language)
+          preprocessed_df.at[index, col] = \
+          [word for word in preprocessed_df.at[index, col] if word not in stop_words]
+
+          #track how many words we removed
+          preprocessed_df.at[index, 'pp_word_count'] = len(preprocessed_df.at[index, col])
+          if verbose is True:
+            print("stopwords: " + str(preprocessed_df.at[index, col]) + "\n")
+
+
+        if 'stem' in options:
+          preprocessed_df.at[index, col] = \
+          [stemmer_obj.stem(word) for word in preprocessed_df.at[index, col]]
+          if verbose is True:
+            print("stemming: " + str(preprocessed_df.at[index, col]) + "\n")
 
 
   if verbose is True:
     print(preprocessed_df)
 
+  pbar.close()
   return preprocessed_df
 
 #File data is distributed into folders in a gross way.
@@ -262,44 +266,44 @@ def load_NLP_data(path_to_data, verbose=True):
     path_to_pos =  path_to_data + 'pos'
     path_to_neg =  path_to_data + 'neg'
 
-
-    list_of_paths = [ [path_to_pos, 1], [path_to_neg, 0]]
-
     #Sentiment encoded as positive = 1 , negative = 0
     #Done so its already encoded into some binary pattern lazily.
     #First iteration should go throu with positive values, and
-    sentiment = 1
-    for target_path in list_of_paths:
-        abs_path = os.path.join(os.getcwd(), target_path[0])
+    list_of_paths = [ [path_to_pos, 1], [path_to_neg, 0]]
 
-        for filename in os.listdir(abs_path):
+    print("Reading data from folders")
+    with tqdm(total= 25000 ) as pbar:
+      for target_path in list_of_paths:
+          abs_path = os.path.join(os.getcwd(), target_path[0])
+          for filename in os.listdir(abs_path):
 
-            split_filename = re.split('_|\.txt', filename)
+              split_filename = re.split('_|\.txt', filename)
 
-            film_id = split_filename[0]
-            rating = split_filename[1]
+              film_id = split_filename[0]
+              rating = split_filename[1]
 
-            train_data_raw_dict['id'].append(film_id)
-            train_data_raw_dict['rating'].append(rating)
-            #encode sentiment based on data using
-            train_data_raw_dict['sentiment'].append(target_path[1])
+              train_data_raw_dict['id'].append(film_id)
+              train_data_raw_dict['rating'].append(rating)
+              #encode sentiment based on data using
+              train_data_raw_dict['sentiment'].append(target_path[1])
 
-            #pre/post processing statistics placeholders
-            train_data_raw_dict['raw_word_count'].append(0)
-            train_data_raw_dict['pp_word_count'].append(0)
+              #pre/post processing statistics placeholders
+              train_data_raw_dict['raw_word_count'].append(0)
+              train_data_raw_dict['pp_word_count'].append(0)
 
-            with open(os.path.join(os.getcwd() + "/" + target_path[0] + "/", filename), 'r') as f:
-                text_string = f.readline()
-                train_data_raw_dict['review'].append(text_string)
-                if verbose is True:
-                    print("Extracted " + target_path[0] + filename)
+              with open(os.path.join(os.getcwd() + "/" + target_path[0] + "/", filename), 'r') as f:
+                  text_string = f.readline()
+                  train_data_raw_dict['review'].append(text_string)
+                  if verbose is True:
+                      print("Extracted " + target_path[0] + filename)
+                  pbar.update(1)
 
-    train_data_raw_df = pd.DataFrame(data=train_data_raw_dict)
+    train_data_raw_df = pd.DataFrame(data=train_data_raw_dict, )
+    tqdm.pandas(desc="Dataframe")
 
-    if verbose is True:
-        print("Data Frame generated")
-        print(train_data_raw_df)
+    print("Data Frame generated")
+    print(train_data_raw_df)
 
-
+    pbar.close()
     return train_data_raw_df
 
