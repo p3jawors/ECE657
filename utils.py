@@ -157,6 +157,7 @@ def dataset_2d_to_3d(dataset, verbose=True):
     reshaped = np.reshape(dataset, (-1, 3, 4))
     if verbose:
         print(f"Reshaping dataset to be in shape of (n_sample, n_timesteps_per_sample, n_features): {reshaped.shape}")
+
     return reshaped
 
 
@@ -172,6 +173,8 @@ def preprocess_NLP_data(dataframe,
                     verbose = True):
 
   preprocessed_df = dataframe.copy()
+
+  print(preprocessed_df)
   column_names = list(preprocessed_df.columns)
 
   preProcessed_list = []
@@ -226,43 +229,47 @@ def preprocess_NLP_data(dataframe,
 
 def load_NLP_data(path_to_data, verbose=True):
 
-    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'sent':[]}
+    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'sentiment':[]}
     #Load in the positive data values first
     path_to_pos =  path_to_data + 'pos'
     path_to_neg =  path_to_data + 'neg'
 
 
-    list_of_paths = [path_to_pos, path_to_neg]
+    list_of_paths = [ [path_to_pos, 1], [path_to_neg, 0]]
 
-
+    #Sentiment encoded as positive = 1 , negative = 0
+    #Done so its already encoded into some binary pattern lazily.
+    #First iteration should go throu with positive values, and
     sentiment = 1
     for target_path in list_of_paths:
-        abs_path = os.path.join(os.getcwd(), target_path)
+        abs_path = os.path.join(os.getcwd(), target_path[0])
 
         for filename in os.listdir(abs_path):
 
             split_filename = re.split('_|\.txt', filename)
-            rating = split_filename[0]
-            film_id = split_filename[1]
+
+            film_id = split_filename[0]
+            rating = split_filename[1]
 
             train_data_raw_dict['id'].append(film_id)
             train_data_raw_dict['rating'].append(rating)
-            train_data_raw_dict['sent'].append(sentiment)
+            #encode sentiment based on data using
+            train_data_raw_dict['sentiment'].append(target_path[1])
 
-            with open(os.path.join(os.getcwd() + "/" + target_path + "/", filename), 'r') as f:
+            with open(os.path.join(os.getcwd() + "/" + target_path[0] + "/", filename), 'r') as f:
 
                 text_string = f.readline()
                 train_data_raw_dict['review'].append(text_string)
 
                 if verbose is True:
-                    print("Extracted " + target_path + filename)
-                    #print(filename + ";Text: " + text_string)
+                    print("Extracted " + target_path[0] + filename)
 
-            #Me being lazy right now. Two folders so yeah
-            sentiment = 0
-    #if verbose is True:
-    #    print(train_data_raw_dict['review'])
     train_data_raw_df = pd.DataFrame(data=train_data_raw_dict)
+
+    if verbose is True:
+        print("Data Frame generated")
+        print(train_data_raw_df)
+
 
     return train_data_raw_df
 
