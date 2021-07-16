@@ -125,6 +125,8 @@ if __name__ == "__main__":
                                               random_seed, verbose)
         model_sg.save(os.path.join(os.getcwd(), 'models/sg_model.blob'))
 
+    sg_embedded_df   = utils.visualize_embeddings(train_data, model_sg)
+    cbow_embedded_df = utils.visualize_embeddings(train_data, model_cbow)
    # history = model.fit(
    #         train_data,
    #         train_labels,

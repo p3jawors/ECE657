@@ -388,3 +388,17 @@ def train_NLP_embedding(dataframe,
   return model
 
 
+def visualize_embeddings(dataframe, model):
+  train_embedded_dict = {'word':[], 'embedding vector':[]}
+  for index, row in dataframe.iterrows():
+    for word in row['review']:
+      if word in model.wv.vocab:
+        if word not in train_embedded_dict['word']:
+          train_embedded_dict['word'].append(word)
+          train_embedded_dict['embedding vector'].append(model.wv[word])
+
+
+  train_embedded_df = pd.DataFrame(data=train_embedded_dict)
+  print(train_embedded_df)
+
+
