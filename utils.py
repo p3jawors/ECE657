@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import re
+import time
 
 from tqdm.auto import tqdm
 
@@ -340,6 +341,7 @@ def train_NLP_embedding(dataframe,
   cores = multiprocessing.cpu_count()
 
   #Initialize model
+  start_time = time.time()
   model = Word2Vec(sentences = dataframe['review'],
                     min_count=min_count,
                    vector_size=feature_size,
@@ -351,6 +353,7 @@ def train_NLP_embedding(dataframe,
                    workers=cores-1)
 
   #build vocab of the model
+  print("Time taken to train model: " + str(time.time() - start_time))
 
   #with tqdm(total= 25000 ) as pbar:
   #  row_count = 0

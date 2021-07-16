@@ -83,8 +83,8 @@ if __name__ == "__main__":
     # Continous bag of words model
     try:
         print("attempting to find previous trained CBOW models")
-        #model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'models/cbow_model.blob')) #uncomment for production
-        model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
+        model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'models/cbow_model.blob')) #uncomment for production
+        #model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
         print("Bag of Words found!")
 
     except IOError:
@@ -106,8 +106,8 @@ if __name__ == "__main__":
     ##Skip o gram model
     try:
         print("Attempting to find previous trained Skip-o-=gram models")
-        #model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'models/sg_model.blob')) #uncomment for production
-        model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
+        model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'models/sg_model.blob')) #uncomment for production
+        #model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
         print("Skip-o-gram found!")
 
     except IOError:
