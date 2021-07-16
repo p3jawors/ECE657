@@ -312,12 +312,28 @@ def load_NLP_data(path_to_data, verbose=True):
 
 """
   Ingest the preprocessed dataframe into word2vec and perform CBOW and Skip-Agram to generate
-  two embedding models, then use that for training our final classifier
+  two embedding models, then use that for training our final classifier/network
 
   Good resoource for this: https://www.kaggle.com/pierremegret/gensim-word2vec-tutorial
 
   Direct doc since alot of tutorials are outdate. size->vector_size. RTFM I suppose
   https://radimrehurek.com/gensim/models/word2vec.html
+
+
+  More useful tutorials:
+  https://www.districtdatalabs.com/modern-methods-for-sentiment-analysis
+
+  Using classifiers as the final decision maker from word embeddings
+  https://medium.com/swlh/sentiment-classification-using-word-embeddings-word2vec-aedf28fbb8ca
+
+  Extensive and broken down - deals with different symbols since twitter has links and 140 word limit
+  https://towardsdatascience.com/another-twitter-sentiment-analysis-with-python-part-11-cnn-word2vec-41f5e28eda74
+
+  Using Keras as the backend, but interesting frequentist approach. using LSTM + a few more output layers
+  https://medium.datadriveninvestor.com/sentiment-analysis-using-embeddings-f3dd99aeaade
+
+  Another example with the imdb dataset and where to go once we've created the embedding models
+  https://thedatafrog.com/en/articles/word-embedding-sentiment-analysis/
 
 """
 def train_NLP_embedding(dataframe,
