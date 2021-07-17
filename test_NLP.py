@@ -18,8 +18,19 @@ if __name__ == "__main__":
     model = keras.models.load_model('models/NLP_model')
 
     # 2. Load your testing data
-    test_data, test_labels = utils.load_NLP_data('data/test_data_NLP.csv', verbose=verbose)
-    test_data = utils.dataset_2d_to_3d(test_data, verbose=verbose)
+    try:
+        print("attempting to find previously preproceed test set")
+        test_data = pd.read_csv(os.path.join(os.getcwd(), 'data/test_NLP_Preproc.csv'))
+        print("DATA FOUND YEEEE BOII")
+        print(train_data)
+    except IOError:
+        raw_test_data = utils.load_NLP_data('data/aclImdb/test/', verbose=False)
+
+        # Preprocess data - I gotchu boo
+        test_data = utils.preprocess_NLP_data(raw_test_data, verbose=False)
+
+        #Save preprocessed data to save time between runs/tuning (~2 min per run)
+        test_data.to_csv(os.path.join(os.getcwd(), 'data/_test_NLP_Preproc.csv'))
 
     # 3. Run prediction on the test data and print the test accuracy
     score = model.evaluate(test_data, test_labels, batch_size=1, verbose=True)

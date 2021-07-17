@@ -23,8 +23,6 @@ from nltk.stem.snowball import SnowballStemmer
 from nltk.stem.lancaster import LancasterStemmer
 
 import nltk
-nltk.download('punkt')
-nltk.download('stopwords')
 
 import string
 
@@ -165,7 +163,8 @@ def dataset_2d_to_3d(dataset, verbose=True):
 
 
 
-def preprocess_NLP_data(dataframe,
+def preprocess_NLP_data(train_dataframe,
+                        test_dataframe=None,
                     options=['lowercase',
                              'punctuation',
                              'tokenize',
@@ -175,12 +174,22 @@ def preprocess_NLP_data(dataframe,
                     language='english',
                     verbose = True):
 
-  preprocessed_df = dataframe
+  nltk.download('punkt')
+  nltk.download('stopwords')
 
-  row_range = len(preprocessed_df['review'])
+  if test_dataframe is not None:
+    print("Preprocessing both train and test sets")
+    data_to_proc = [train_dataframe, test_dataframe]
+
+    row_range = len(train_dataframe)
+    print("Num Items to preproc:" +str(row_range))
+  else:
+    print("Preprocessing train set")
+    data_to_proc = [train_dataframe]
+    row_range = len(train_dataframe)
 
 
-  print("Preprocessing Dataframe")
+
   if verbose is True:
     print(preprocessed_df)
 
@@ -192,61 +201,74 @@ def preprocess_NLP_data(dataframe,
   elif stemmer == 'lancaster':
     stemmer_obj = LancasterStemmer()
 
-  row_count = 0
-  with tqdm(total= len(preprocessed_df['review'])) as pbar:
-    for i in preprocessed_df.itertuples():
-        pbar.update(1)
-        index = i.Index
-        column = 2
-        col = 'review'
+  for preprocessed_df in data_to_proc:
 
-        if 'lowercase' in options:
-          preprocessed_df.at[index, col] = i[column].lower()
-          if verbose is True:
-            print("\nlowercase: " + preprocessed_df.at[index, col]+ "\n")
+      print("Ingesting frame")
+      print(preprocessed_df)
+      with tqdm(total= row_range, disable = verbose) as pbar:
+        for i in preprocessed_df.itertuples():
+            pbar.update(1)
+            index = i.Index
+            column = 2
+            col = 'review'
 
-
-        if 'punctuation' in options:
-          preprocessed_df.at[index, col] = \
-          "".join([char for char in preprocessed_df.at[index, col]
-                   .encode('ascii','ignore')
-                   .decode() if char not in string.punctuation])
-          if verbose is True:
-            print("punctuation: " + preprocessed_df.at[index, col] + "\n")
+            if 'lowercase' in options:
+              preprocessed_df.at[index, col] = i[column].lower()
+              if verbose is True:
+                print("\nlowercase: " + preprocessed_df.at[index, col]+ "\n")
 
 
-        if 'tokenize' in options:
-          preprocessed_df.at[index, col] = \
-          nltk.word_tokenize(preprocessed_df.at[index, col])
-
-          preprocessed_df.at[index, 'raw_word_count'] = len(preprocessed_df.at[index, col])
-          if verbose is True:
-            print("tokenized: " + str(preprocessed_df.at[index, col]) + "\n" )
-
-
-        if 'stopwords' in options:
-          stop_words = stopwords.words(language)
-          preprocessed_df.at[index, col] = \
-          [word for word in preprocessed_df.at[index, col] if word not in stop_words]
-
-          #track how many words we removed
-          preprocessed_df.at[index, 'pp_word_count'] = len(preprocessed_df.at[index, col])
-          if verbose is True:
-            print("stopwords: " + str(preprocessed_df.at[index, col]) + "\n")
+            if 'punctuation' in options:
+              preprocessed_df.at[index, col] = \
+              "".join([char for char in preprocessed_df.at[index, col]
+                       .encode('ascii','ignore')
+                       .decode() if char not in string.punctuation])
+              if verbose is True:
+                print("punctuation: " + preprocessed_df.at[index, col] + "\n")
 
 
-        if 'stem' in options:
-          preprocessed_df.at[index, col] = \
-          [stemmer_obj.stem(word) for word in preprocessed_df.at[index, col]]
-          if verbose is True:
-            print("stemming: " + str(preprocessed_df.at[index, col]) + "\n")
+            if 'tokenize' in options:
+              preprocessed_df.at[index, col] = \
+              nltk.word_tokenize(preprocessed_df.at[index, col])
+
+              preprocessed_df.at[index, 'raw_word_count'] = len(preprocessed_df.at[index, col])
+              if verbose is True:
+                print("tokenized: " + str(preprocessed_df.at[index, col]) + "\n" )
 
 
-  if verbose is True:
-    print(preprocessed_df)
+            if 'stopwords' in options:
+              stop_words = stopwords.words(language)
+              preprocessed_df.at[index, col] = \
+              [word for word in preprocessed_df.at[index, col] if word not in stop_words]
 
-  pbar.close()
-  return preprocessed_df
+              #track how many words we removed
+              preprocessed_df.at[index, 'pp_word_count'] = len(preprocessed_df.at[index, col])
+              if verbose is True:
+                print("stopwords: " + str(preprocessed_df.at[index, col]) + "\n")
+
+
+            if 'stem' in options:
+              preprocessed_df.at[index, col] = \
+              [stemmer_obj.stem(word) for word in preprocessed_df.at[index, col]]
+              if verbose is True:
+                print("stemming: " + str(preprocessed_df.at[index, col]) + "\n")
+
+
+      if verbose is True:
+        print(preprocessed_df)
+
+      pbar.close()
+
+  if test_dataframe is not None:
+      print("Train Dataframe")
+      print(train_dataframe)
+      print("Test Dataframe")
+      print(train_dataframe)
+      return train_dataframe, test_dataframe
+  else:
+      print(train_dataframe)
+      return train_dataframe
+
 
 #File data is distributed into folders in a gross way.
 
@@ -259,55 +281,79 @@ def preprocess_NLP_data(dataframe,
 
 """
    Given the input path, run through the bonkos folder structure used
+   spit out loaded train/test before processing
 """
 
 def load_NLP_data(path_to_data, verbose=True):
 
-    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'WordVectors':[] ,'sentiment':[]}
+    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'word_vectors':[] ,'sentiment':[]}
+    test_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'word_vectors':[] ,'sentiment':[]}
+
+    path_to_train_folder =  "train/"
+    path_to_test_folder =  "test/"
+
     #Load in the positive data values first
-    path_to_pos =  path_to_data + 'pos'
-    path_to_neg =  path_to_data + 'neg'
+    path_to_pos =  'pos'
+    path_to_neg =  'neg'
+
+    print("Reading data from folders")
 
     #Sentiment encoded as positive = 1 , negative = 0
     #Done so its already encoded into some binary pattern lazily.
     #First iteration should go throu with positive values, and
-    list_of_paths = [ [path_to_pos, 1], [path_to_neg, 0]]
 
-    print("Reading data from folders")
-    with tqdm(total= 25000 ) as pbar:
-      for target_path in list_of_paths:
-          abs_path = os.path.join(os.getcwd(), target_path[0])
-          for filename in os.listdir(abs_path):
+    folder_paths = [[path_to_data+path_to_train_folder, train_data_raw_dict] , [path_to_data+path_to_test_folder, test_data_raw_dict]]
 
-              split_filename = re.split('_|\.txt', filename)
+    #Churn through all our datasamples to make this blob for embedding
+    with tqdm(total= 50000, disable = verbose) as pbar_top:
 
-              film_id = split_filename[0]
-              rating = split_filename[1]
+        list_of_paths = [[path_to_pos, 1], [path_to_neg, 0]]
+        for folder in folder_paths:
 
-              train_data_raw_dict['id'].append(film_id)
-              train_data_raw_dict['rating'].append(rating)
-              #encode sentiment based on data using
-              train_data_raw_dict['sentiment'].append(target_path[1])
+            if verbose is True:
+               print("Target Folder: "+ folder[0])
 
-              #pre/post processing statistics placeholders
-              train_data_raw_dict['raw_word_count'].append(0)
-              train_data_raw_dict['pp_word_count'].append(0)
+            with tqdm(total= 25000, disable=verbose) as pbar:
+              for target_path in list_of_paths:
+                  abs_path = os.path.join(os.getcwd(), folder[0]+target_path[0])
 
-              with open(os.path.join(os.getcwd() + "/" + target_path[0] + "/", filename), 'r') as f:
-                  text_string = f.readline()
-                  train_data_raw_dict['review'].append(text_string)
                   if verbose is True:
-                      print("Extracted " + target_path[0] + filename)
-                  pbar.update(1)
+                     print("path: "+ target_path[0])
 
-    train_data_raw_df = pd.DataFrame(data=train_data_raw_dict, )
-    tqdm.pandas(desc="Dataframe")
+                  for filename in os.listdir(abs_path):
+                      split_filename = re.split('_|\.txt', filename)
 
-    print("Data Frame generated")
-    print(train_data_raw_df)
+                      film_id = split_filename[0]
+                      rating = split_filename[1]
 
+                      folder[1]['id'].append(film_id)
+                      folder[1]['rating'].append(rating)
+                      #encode sentiment based on data using
+                      folder[1]['sentiment'].append(target_path[1])
+
+                      #pre/post processing statistics placeholders
+                      folder[1]['raw_word_count'].append(0)
+                      folder[1]['pp_word_count'].append(0)
+                      folder[1]['word_vectors'].append(0)
+
+                      with open(os.path.join(os.getcwd() + "/" + folder[0] + target_path[0] + "/", filename), 'r') as f:
+                          text_string = f.readline()
+                          folder[1]['review'].append(text_string)
+                          if verbose is True:
+                              print("Extracted " + folder[0] + target_path[0] + filename)
+                          pbar.update(1)
+                          pbar_top.update(1)
+
+            dataframe = pd.DataFrame(data=folder[1])
+            folder.append(dataframe)
+            tqdm.pandas(desc="Dataframe")
+            if verbose is True:
+                print("Data Frame generated")
+                print(folder[2])
+
+    pbar_top.close()
     pbar.close()
-    return train_data_raw_df
+    return folder_paths[0][2], folder_paths[1][2]
 
 
 """
@@ -337,6 +383,7 @@ def load_NLP_data(path_to_data, verbose=True):
 
 """
 def train_NLP_embedding(dataframe,
+                        test_dataframe,
                         feature_size,
                         window,
                         learning_rate,
@@ -354,11 +401,17 @@ def train_NLP_embedding(dataframe,
       print("Params: VecSize: "+ str(feature_size) + " Window:" + str(window)+ " Learn Rate:"+ str(learning_rate) + " Min learn Rate:"+ str(min_learn_rate))
       print("        Min_count:"+ str(min_count) +  " Neg Sample Rate: "+ str(negative_sample_rate) + "\n")
 
+
+  if test_dataframe is not None:
+    embeddeding_frame = pd.concat(dataframe, test_dataframe)
+  else:
+    emedding_frame = dataframe
+
   cores = multiprocessing.cpu_count()
 
   #Initialize model
   start_time = time.time()
-  model = Word2Vec(sentences = dataframe['review'],
+  model = Word2Vec(sentences = embedding_dataframe['review'],
                     min_count=min_count,
                    vector_size=feature_size,
                    window=window,
@@ -371,34 +424,22 @@ def train_NLP_embedding(dataframe,
   #build vocab of the model
   print("Time taken to train model: " + str(time.time() - start_time))
 
-  #with tqdm(total= 25000 ) as pbar:
-  #  row_count = 0
-  #  for row in dataframe['review#']:
-      #if verbose is True:
-      #  print("Training" + str(row)+ "\n" )
-
-#      row_count += 1
-#      pbar.update(1)
-#      model.build_vocab(row)
-#      #Testing
- #     if row_count >= 3:
- #           break
-
- # pbar.close()
   return model
 
 
 def visualize_embeddings(dataframe, model):
-  train_embedded_dict = {'word':[], 'embedding vector':[]}
-  for index, row in dataframe.iterrows():
-    for word in row['review']:
-      if word in model.wv.vocab:
-        if word not in train_embedded_dict['word']:
-          train_embedded_dict['word'].append(word)
-          train_embedded_dict['embedding vector'].append(model.wv[word])
+
+  model.most_similar(positive=['love', 'awesome', 'great'], topn=5)
+  #train_embedded_dict = {'word':[], 'embedding vector':[]}
+  #for index, row in dataframe.iterrows():
+  #  for word in row['review']:
+  #    if word in model.wv.vocab:
+  #      if word not in train_embedded_dict['word']:
+  ##        train_embedded_dict['word'].append(word)
+  #        train_embedded_dict['embedding vector'].append(model.wv[word])
 
 
-  train_embedded_df = pd.DataFrame(data=train_embedded_dict)
+  #train_embedded_df = pd.DataFrame(data=train_embedded_dict)
   print(train_embedded_df)
 
 

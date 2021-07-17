@@ -8,6 +8,7 @@ import os
 
 from gensim.test.utils import common_texts
 from gensim.models import Word2Vec
+from gensim.models import Doc2Vec
 
 from keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
@@ -17,41 +18,6 @@ from keras.optimizers import Adam
 from tensorflow import keras
 
 
-def load_model(model_name, verbose=True, **kwargs):
-    #=================DEFINE MODEL STRUCTURE HERE====================
-    if verbose:
-        print(f"Loading model: {model_name}")
-
-    if model_name == 'vanilla_lstm':
-        model = Sequential()
-        model.add(LSTM(kwargs['n_neurons'], activation='relu', input_shape=(kwargs['input_shape'])))
-        model.add(Dense(1))
-        model.compile(optimizer='adam', loss='mse')
-
-    if model_name == 'vanilla_batch_norm_lstm':
-        model = Sequential()
-        tf.keras.layers.BatchNormalization(
-            axis=-1,
-            momentum=0.99,
-            epsilon=0.001,
-            center=True,
-            scale=True,
-            beta_initializer="zeros",
-            gamma_initializer="ones",
-            moving_mean_initializer="zeros",
-            moving_variance_initializer="ones",
-            beta_regularizer=None,
-            gamma_regularizer=None,
-            beta_constraint=None,
-            gamma_constraint=None,
-        )
-        model.add(LSTM(kwargs['n_neurons'], activation='relu', input_shape=(kwargs['input_shape'])))
-        model.add(Dense(1))
-        model.compile(optimizer='adam', loss='mse')
-    else:
-        raise Exception(f"{model_name} is not a valid model")
-
-    return model
 
 
 if __name__ == "__main__":
@@ -65,26 +31,36 @@ if __name__ == "__main__":
 
     try:
         print("attempting to find previously trained preprocessing")
-        train_data = pd.read_csv(os.path.join(os.getcwd(), 'data/NLP_Preproc.csv'))
+        #train_data = pd.read_csv(os.path.join(os.getcwd(), 'Does not exist')) #Use for testing
+
+        train_data = pd.read_csv(os.path.join(os.getcwd(), 'data/NLP_train_Preproc.csv'))
         print("DATA FOUND YEEEE BOII")
         print(train_data)
+
+        test_data = pd.read_csv(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.csv'))
+        print("Boyakasha! Test Data too bro!")
+        print(test_data)
+
     except IOError:
         print("No preproced data, raw load and preproc commencing")
         # 1. load your training data - stupid folder structure with this dataset
-        raw_train_data = utils.load_NLP_data('data/aclImdb/train/', verbose=False)
+             #you need to load and embedd all this data train/test/usup to make proper embeddings
+             # before we make a network to train on sentiment
+        raw_train_data, raw_test_data = utils.load_NLP_data('data/aclImdb/', verbose=False)
 
         # Preprocess data - I gotchu boo
-        train_data = utils.preprocess_NLP_data(raw_train_data, verbose=False)
+        train_data, test_data = utils.preprocess_NLP_data(raw_train_data, raw_test_data, verbose=False)
 
         #Save preprocessed data to save time between runs/tuning (~2 min per run)
-        train_data.to_csv(os.path.join(os.getcwd(), 'data/NLP_Preproc.csv'))
+        train_data.to_csv(os.path.join(os.getcwd(), 'data/NLP_train_Preproc.csv'))
+        test_data.to_csv(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.csv'))
 
     # 2. Train your emedding using word2vec
     # Continous bag of words model
     try:
         print("attempting to find previous trained CBOW models")
-        model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'models/cbow_model.blob')) #uncomment for production
-        #model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
+        #model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'models/cbow_model.blob')) #uncomment for production
+        model_cbow = Doc2Vec.load(os.path.join(os.getcwd(), 'always fail'))
         print("Bag of Words found!")
 
     except IOError:
@@ -97,7 +73,7 @@ if __name__ == "__main__":
         sample = 6e-5
         neg_samples = 20
 
-        model_cbow  = utils.train_NLP_embedding(train_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "CBOW",
+        model_cbow  = utils.train_NLP_embedding(train_data, test_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "CBOW",
                                               random_seed, verbose)
 
         print("No existing model found: Generating CBOW embedding model")
@@ -106,8 +82,8 @@ if __name__ == "__main__":
     ##Skip o gram model
     try:
         print("Attempting to find previous trained Skip-o-=gram models")
-        model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'models/sg_model.blob')) #uncomment for production
-        #model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'always fail'))
+        #model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'models/sg_model.blob')) #uncomment for production
+        model_sg = Doc2Vec.load(os.path.join(os.getcwd(), 'always fail'))
         print("Skip-o-gram found!")
 
     except IOError:
@@ -121,7 +97,7 @@ if __name__ == "__main__":
         sample = 6e-5
         neg_samples = 20
 
-        model_sg  = utils.train_NLP_embedding(train_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "Skip-o-gram",
+        model_sg  = utils.train_NLP_embedding(train_data, test_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "Skip-o-gram",
                                               random_seed, verbose)
         model_sg.save(os.path.join(os.getcwd(), 'models/sg_model.blob'))
 
