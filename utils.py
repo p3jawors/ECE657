@@ -396,22 +396,35 @@ def train_NLP_embedding(dataframe,
 
   dict_algo = {"Skip-o-gram":1, "CBOW":0}
 
+
+  if test_dataframe is not None:
+    embedding_dataframe = dataframe.copy()
+    test_frame = test_dataframe.copy()
+    result = pd.concat([embedding_dataframe, test_frame], ignore_index =True)
+
+    if verbose is True:
+        print("Taking Training Data Frame \n")
+        print(dataframe)
+        print("Taking Test Data Frame \n")
+        print(test_frame)
+        print("Concat to the following: Result \n")
+        print(result)
+  else:
+    result = dataframe.copy()
+
+
   if verbose is True:
       print("\nAlgo used: " + algorithm)
       print("Params: VecSize: "+ str(feature_size) + " Window:" + str(window)+ " Learn Rate:"+ str(learning_rate) + " Min learn Rate:"+ str(min_learn_rate))
       print("        Min_count:"+ str(min_count) +  " Neg Sample Rate: "+ str(negative_sample_rate) + "\n")
 
 
-  if test_dataframe is not None:
-    embeddeding_frame = pd.concat(dataframe, test_dataframe)
-  else:
-    emedding_frame = dataframe
 
   cores = multiprocessing.cpu_count()
 
   #Initialize model
   start_time = time.time()
-  model = Word2Vec(sentences = embedding_dataframe['review'],
+  model = Word2Vec(sentences = result['review'],
                     min_count=min_count,
                    vector_size=feature_size,
                    window=window,
