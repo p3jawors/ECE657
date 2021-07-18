@@ -18,7 +18,8 @@ if __name__ == "__main__":
 
     # 1. Load your saved model
     try:
-        model = keras.models.load_model('models/')
+
+    sentiment_model.read_pickle(os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), compression='gzip')
 
         # 2. Load your testing data
         try:

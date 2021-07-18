@@ -5,6 +5,11 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import pandas as pd
 import os
+import gzip
+
+from sklearn.linear_model import SGDClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
 
 from gensim.test.utils import common_texts
 from gensim.models import Word2Vec
@@ -18,6 +23,20 @@ from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout, LSTM
 from keras.optimizers import Adam
 from tensorflow import keras
 
+
+
+"""
+    Takes a vectorized dataframe and trains a classifier to determine sentiment.
+    return a classifier thats trained to store for sentiment classification
+"""
+def train_classifier(dataframe, random_seed):
+
+    x_train = dataframe['vector_sentence'].to_list()
+    y_train = dataframe['sentiment'].to_list()
+    logRClassifier = SGDClassifier(loss='log', penalty='l1')
+    logRClassifier.fit(x_train, y_train)
+
+    return logRClassifier
 
 
 
@@ -69,7 +88,7 @@ if __name__ == "__main__":
 
         #model = Doc2Vec.load(os.path.join(os.getcwd(), 'always fail'))
         print("Bag of Words found!")
-        model = model.wv
+        #model = model.wv
     except IOError:
         #Using params from tutorial will fine tune with grid search after
         min_count = 7
@@ -93,25 +112,29 @@ if __name__ == "__main__":
     #3 Genterate proper embedded dataset using the new model prior to output training
     #  This allows us to reuse previous iterations
     try:
-        train_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle'))
+        print("Looking for previously vectorized training data")
+        g_data = gzip.open(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle.gz'))
+        train_embedded_df = pd.read_pickle(g_data)
+        g_data.close()
         print("Train Data. FOUND YEEEE BOII")
         print(train_embedded_df)
 
     except IOError:
+        print("Load failed")
         print("Generating vectorized training from dataframe")
         print(train_data)
         train_embedded_df = utils.embedd_dataset(train_data, model)
 
         if train_embedded_df is not None:
-            train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle'), compression='gzip')
-            print("Reesult stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle')))
+            train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle.gz'), compression='gzip')
+            print("Reesult stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle')))
 
 
     #5 Train the output classifier
     # Use a set of featature vectors applied to the original training set as well as the sentiment, and potentially other features
     # (rating/Word count) to determine the potential output of the resulting sentiment of the review
-
-    # Use scikit learns classifier or roll our own output stage
+    sentiment_model = train_classifier(train_embedded_df, random_seed)
+    sentiment_model.to_pickle(os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), compression='gzip')
 
 
     #6 Visualize result of the training/performance of the final network
