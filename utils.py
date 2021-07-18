@@ -48,39 +48,64 @@ def plot_training_results(histories, cols, labels, title):
         plt.subplot(211)
         plt.title('Loss')
         if 'loss' in hist.history:
-            plt.plot(hist.history['loss'], color=cols[ii], label='train %s' % labels[ii])
+            plt.plot(hist.history['loss'], color=cols[ii], label='train %s: %.2f' % (labels[ii], hist.history['loss'][-1]))
         if 'val_loss' in hist.history:
-            plt.plot(hist.history['val_loss'], color=cols[ii], label='val %s' % labels[ii], linestyle='--')
+            plt.plot(hist.history['val_loss'], color=cols[ii], label='val %s: %.2f' % (labels[ii], hist.history['val_loss'][-1]), linestyle='--')
         plt.legend()
         # plot accuracy
         plt.subplot(212)
         plt.title('Accuracy')
         if 'accuracy' in hist.history:
-            plt.plot(hist.history['accuracy'], color=cols[ii], label='train %s' % labels[ii])
+            plt.plot(hist.history['accuracy'], color=cols[ii], label='train %s: %.2f' % (labels[ii], his.history['accuracy'][-1]))
         if 'val_accuracy' in hist.history:
-            plt.plot(hist.history['val_accuracy'], color=cols[ii], label='val %s' % labels[ii], linestyle='--')
+            plt.plot(hist.history['val_accuracy'], color=cols[ii], label='val %s: %.2f' % (labels[ii], his.history['val_accuracy'][-1]), linestyle='--')
         plt.legend()
     plt.savefig('Q1_%s.png' % title)
     plt.show()
 
 
 # saved dataset to data folder
-def generate_RNN_train_test_split(verbose=True):
+def generate_RNN_train_test_split(verbose=True, debug_plot=False):
     if verbose:
         print('--Generating train/test split--')
+
     # read the csv file
     with open('data/q2_dataset.csv', newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
+        n_lines = len(list(reader))
+
+    # counting the lines changes the reader object, so open again
+    with open('data/q2_dataset.csv', newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        # dict for tracking uneditted data for testing
+        tracking = {}
+        tracking['vol'] = []
+        tracking['open'] = []
+        tracking['high'] = []
+        tracking['low'] = []
+        skip_x = []
+        skip_y = []
+        no_skip_x = []
         x = []
         xi = []
         y = []
+
+        # print('N LINES: ', n_lines)
         for ii, row in enumerate(reader):
             # columns are [Date, Close/Last, Volume, Open, High, Low]
-            # we want to predict day 4 close using days 1-3 Vol, Op, Hi, and Low
+            # we want to predict day 4 open using days 1-3 Vol, Op, Hi, and Low
             if ii == 0:
                 # skip the header row
                 continue
+            else:
+                no_skip_x.append(ii)
+                tracking['vol'].append(np.copy(float(row[2])))
+                tracking['open'].append(np.copy(float(row[3])))
+                tracking['high'].append(np.copy(float(row[4])))
+                tracking['low'].append(np.copy(float(row[5])))
+
             if ii%4 == 0:
+                skip_y.append(ii)
                 # 4th day in this set, save close as target
                 # cast to float
                 y.append(np.copy(float(row[3])))
@@ -88,14 +113,52 @@ def generate_RNN_train_test_split(verbose=True):
                 x.append(np.copy(xi))
                 # reset our 3 day list
                 xi = []
-            else:
+            # make sure we have one more row to use for our GT before saving the features
+            elif ii+4 <= n_lines:
+                skip_x.append(ii)
                 # append features for days 1-3
                 # cast to float
                 xi.append([float(i) for i in row[2:]])
+
     if verbose:
         print('raw x: ', np.asarray(x).shape)
         print('raw y: ', np.asarray(y).shape)
+        print('skipx: ', np.asarray(skip_x).shape)
+        print('skipy: ', np.asarray(skip_y).shape)
+
     x = np.array(x)
+
+    if debug_plot:
+        # test our reshaping from 3d -> 2d to save to csv, then back to 3D for the NN
+        x_test = np.reshape(x, (x.shape[0], np.prod(x.shape[1:])))
+        x = np.reshape(x_test, (-1, 3, 4))
+        plt.figure()
+        plt.subplot(511)
+        plt.plot(no_skip_x, tracking['vol'], label='UNEDIT VOL')
+        plt.scatter(skip_x, np.hstack(np.array(x)[:, :, 0]), label='vol')
+        plt.legend()
+
+        plt.subplot(512)
+        plt.plot(no_skip_x, tracking['open'], label='UNEDIT OPEN')
+        plt.scatter(skip_x, np.hstack(np.array(x)[:, :, 1]), label='open')
+        plt.legend()
+
+        plt.subplot(513)
+        plt.plot(no_skip_x, tracking['high'], label='UNEDIT HIGH')
+        plt.scatter(skip_x, np.hstack(np.array(x)[:, :, 2]), label='high')
+        plt.legend()
+
+        plt.subplot(514)
+        plt.plot(no_skip_x, tracking['low'], label='UNEDIT LOW')
+        plt.scatter(skip_x, np.hstack(np.array(x)[:, :, 3]), label='low')
+        plt.legend()
+
+        plt.subplot(515)
+        plt.plot(no_skip_x, tracking['open'], label='UNEDIT OPEN')
+        plt.scatter(skip_y, np.array(y), label='target (open)')
+        plt.legend()
+        plt.show()
+
     #reshape our input vectors from 2D to 1D
     x = np.reshape(x, (x.shape[0], np.prod(x.shape[1:])))
     if verbose:

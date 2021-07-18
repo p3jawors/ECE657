@@ -3,6 +3,7 @@ import utils
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import sklearn
 
 from tensorflow import keras
 
@@ -19,6 +20,10 @@ if __name__ == "__main__":
 
     # 2. Load your testing data
     test_data, test_labels = utils.load_RNN_data('data/test_data_RNN.csv', verbose=verbose)
+
+    scaler = sklearn.preprocessing.MinMaxScaler(feature_range=(0, 1))
+    test_data = scaler.fit_transform(test_data)
+    test_data = utils.dataset_2d_to_3d(test_data, verbose=verbose)
     test_data = utils.dataset_2d_to_3d(test_data, verbose=verbose)
 
     # 3. Run prediction on the test data and output required plot and loss
@@ -44,6 +49,7 @@ if __name__ == "__main__":
     plt.title('RNN Prediction Difference')
     plt.plot(np.squeeze(scores))
     plt.legend()
+    plt.savefig('Q2_RNN-test.png')
     plt.show()
 
     #TODO need to extract predictions and plot them against GT
