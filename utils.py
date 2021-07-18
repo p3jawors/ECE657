@@ -633,6 +633,8 @@ def embedd_dataset(dataframe, model, verbose=True):
 
   embedded_df = pd.DataFrame(data=embedded_dict)
 
+  #Shuffle this for training 
+  embedded_df = embedded_df.sample(frac=1).reset_index(drop=True)
   print("Time taken to apply embedding to dataset: " + str(time.time() - start_time))
 
   if verbose is True:
