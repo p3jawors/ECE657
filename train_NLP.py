@@ -52,7 +52,7 @@ if __name__ == "__main__":
         # 1. load your training data - stupid folder structure with this dataset
              #you need to load and embedd all this data train/test/usup to make proper embeddings
              # before we make a network to train on sentiment
-        raw_train_data, raw_test_data = utils.load_NLP_data('data/aclImdb/', verbose=False)
+        raw_train_data, raw_test_data = utils.load_all_NLP_data('data/aclImdb/', verbose=False)
 
         # Preprocess data - I gotchu boo
         train_data, test_data = utils.preprocess_NLP_data(raw_train_data, raw_test_data, verbose=False)
@@ -106,23 +106,6 @@ if __name__ == "__main__":
             train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle'), compression='gzip')
             print("Reesult stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle')))
 
-    #4 Embedd the test set as well then save to a file
-    # Allows us to streamline training after this is done the first time
-    try:
-
-      test_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle'))
-      print("Train Data. FOUND YEEEE BOII")
-      print(test_embedded_df)
-
-    except IOError:
-
-        print("Generating vectorized test from dataframe")
-        print(test_data)
-        test_embedded_df = utils.embedd_dataset(test_data, model)
-
-        if test_embedded_df is not None:
-            test_embedded_df.to_pickle( os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle'), compression='gzip')
-            print("Result stored:" + str(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle')))
 
     #5 Train the output classifier
     # Use a set of featature vectors applied to the original training set as well as the sentiment, and potentially other features

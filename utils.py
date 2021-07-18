@@ -363,10 +363,10 @@ def preprocess_NLP_data(train_dataframe,
    spit out loaded train/test before processing
 """
 
-def load_NLP_data(path_to_data, verbose=True):
+def load_all_NLP_data(path_to_data, verbose=True):
 
-    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'word_vectors':[] ,'sentiment':[]}
-    test_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'word_vectors':[] ,'sentiment':[]}
+    train_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'sentiment':[]}
+    test_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'sentiment':[]}
 
     path_to_train_folder =  "train/"
     path_to_test_folder =  "test/"
@@ -413,7 +413,6 @@ def load_NLP_data(path_to_data, verbose=True):
                       #pre/post processing statistics placeholders
                       folder[1]['raw_word_count'].append(0)
                       folder[1]['pp_word_count'].append(0)
-                      folder[1]['word_vectors'].append(0)
 
                       with open(os.path.join(os.getcwd() + "/" + folder[0] + target_path[0] + "/", filename), 'r') as f:
                           text_string = f.readline()
@@ -433,6 +432,73 @@ def load_NLP_data(path_to_data, verbose=True):
     pbar_top.close()
     pbar.close()
     return folder_paths[0][2], folder_paths[1][2]
+
+
+"""
+   Given the input path, run through the bonkos folder structure used
+   spit out loaded train/test before processing
+"""
+
+def load_NLP_test_data(path_to_data, verbose=True):
+
+    test_data_raw_dict = {'id':[], 'review':[], 'rating':[], 'raw_word_count':[], 'pp_word_count':[], 'sentiment':[]}
+
+    path_to_test_folder =  "test/"
+
+    #Load in the positive data values first
+    path_to_pos =  'pos'
+    path_to_neg =  'neg'
+
+    print("Reading data from folders")
+
+    #Sentiment encoded as positive = 1 , negative = 0
+    #Done so its already encoded into some binary pattern lazily.
+    #First iteration should go throu with positive values, and
+
+    folder = [path_to_data+path_to_test_folder, test_data_raw_dict]
+
+    list_of_paths = [[path_to_pos, 1], [path_to_neg, 0]]
+    if verbose is True:
+       print("Target Folder: "+ folder[0])
+
+    with tqdm(total= 25000, disable=verbose) as pbar:
+      for target_path in list_of_paths:
+          abs_path = os.path.join(os.getcwd(), folder[0]+target_path[0])
+
+          if verbose is True:
+             print("path: "+ target_path[0])
+
+          for filename in os.listdir(abs_path):
+              split_filename = re.split('_|\.txt', filename)
+
+              film_id = split_filename[0]
+              rating = split_filename[1]
+
+              folder[1]['id'].append(film_id)
+              folder[1]['rating'].append(rating)
+              #encode sentiment based on data using
+              folder[1]['sentiment'].append(target_path[1])
+
+              #pre/post processing statistics placeholders
+              folder[1]['raw_word_count'].append(0)
+              folder[1]['pp_word_count'].append(0)
+
+              with open(os.path.join(os.getcwd() + "/" + folder[0] + target_path[0] + "/", filename), 'r') as f:
+                  text_string = f.readline()
+                  folder[1]['review'].append(text_string)
+                  if verbose is True:
+                      print("Extracted " + folder[0] + target_path[0] + filename)
+                  pbar.update(1)
+
+    dataframe = pd.DataFrame(data=folder[1])
+    folder.append(dataframe)
+    tqdm.pandas(desc="Dataframe")
+    if verbose is True:
+        print("Data Frame generated")
+        print(dataframe)
+
+    pbar.close()
+    return dataframe
 
 
 
