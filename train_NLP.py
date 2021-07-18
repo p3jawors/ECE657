@@ -93,7 +93,7 @@ if __name__ == "__main__":
     #3 Genterate proper embedded dataset using the new model prior to output training
     #  This allows us to reuse previous iterations
     try:
-        train_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_train'+algorithm+'.pickle'))
+        train_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle'))
         print("Train Data. FOUND YEEEE BOII")
         print(train_embedded_df)
 
@@ -103,16 +103,14 @@ if __name__ == "__main__":
         train_embedded_df = utils.embedd_dataset(train_data, model)
 
         if train_embedded_df is not None:
-            print("Resulting Train df")
-            print(train_embedded_df)
-            train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train'+algorithm+'.pickle'))
-            print("Reesult stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train'+algorithm+'.pickle')))
+            train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle'), compression='gzip')
+            print("Reesult stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'.pickle')))
 
     #4 Embedd the test set as well then save to a file
     # Allows us to streamline training after this is done the first time
     try:
 
-      test_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test'+algorithm+'.pickle'))
+      test_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle'))
       print("Train Data. FOUND YEEEE BOII")
       print(test_embedded_df)
 
@@ -123,10 +121,8 @@ if __name__ == "__main__":
         test_embedded_df = utils.embedd_dataset(test_data, model)
 
         if test_embedded_df is not None:
-            print("Resulting Train df")
-            print(test_embedded_df)
-            test_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle'))
-            print("Result stored:" + str(os.path.join(os.getcwd(), 'data/NLP_test'+algorithm+'.pickle')))
+            test_embedded_df.to_pickle( os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle'), compression='gzip')
+            print("Result stored:" + str(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle')))
 
     #5 Train the output classifier
     # Use a set of featature vectors applied to the original training set as well as the sentiment, and potentially other features

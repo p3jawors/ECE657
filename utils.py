@@ -6,6 +6,7 @@ import os
 import pandas as pd
 import re
 import time
+import math
 
 from ast import literal_eval
 from tqdm.auto import tqdm
@@ -484,27 +485,32 @@ def embedd_dataset(dataframe, model, verbose=True):
 
   start_time = time.time()
   # Embed training dataset words.
-  #embedded_dict = {'word':[], 'embedding vector':[]}
-  #for i in dataframe.itertuples():
-  #  column = 3
-  #  col = 'review'
-  #  index = i.Index
-  #  print(i[column])
-#
- #   for word in :
- #     if model.key_to_index[word] is not None:
- #       if word not in train_embedded_dict['word']:
- #         train_embedded_dict['word'].append(word)
- #         train_embedded_dict['embedding vector'].append(model.get_vector(word, norm=True))
+  embedded_dict = {'vector_sentence':[], 'sentiment':[]}
 
+  for row in dataframe.itertuples():
+    index = row.Index
 
-  #embedded_df = pd.DataFrame(data=train_embedded_dict)
+    word_list = dataframe.at[index, 'review']
+    vectorized_list = []
+
+    sentiment = dataframe.at[index, 'sentiment']
+
+    for word in word_list:
+        if word in model.key_to_index:
+           vectorized_list.append(model.get_vector(word, norm=True))
+
+    embedded_dict['vector_sentence'].append(vectorized_list)
+    embedded_dict['sentiment'].append(sentiment)
+
+  embedded_df = pd.DataFrame(data=embedded_dict)
 
   print("Time taken to apply embedding to dataset: " + str(time.time() - start_time))
 
-  #if verbose is True:
-  #  print("Time taken to perform embedd vectors: " + str(time.time() - start_time))
-  #  print(embedded_df)
+  if verbose is True:
+    print("Resulting Frame")
+    print(embedded_df)
+
+  return embedded_df
 
 """
  Look at stuff close to the given words
@@ -512,8 +518,8 @@ def embedd_dataset(dataframe, model, verbose=True):
  https://towardsdatascience.com/a-beginners-guide-to-word-embedding-with-gensim-word2vec-model-5970fa56cc92
 """
 def visualize_embeddings(model):
-    print("\nTop 10 related to bad")
-    print(model.most_similar("bad"))
+    print("\nTop 10 related to terrible")
+    print(model.most_similar("terribl"))
 
     print("\nTop 10 related to great\n")
     print(model.most_similar("great"))
