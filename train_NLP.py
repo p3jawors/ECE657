@@ -76,7 +76,7 @@ if __name__ == "__main__":
         learning_rate = 0.03
         min_learning_rate = 0.0007
         window = 2
-        vec_size = 300
+        vec_size = 0 #Setting this to zero/negative, train_NLP_vectors will use average word counts for vector size
         sample = 6e-5
         neg_samples = 20
 

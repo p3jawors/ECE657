@@ -429,6 +429,11 @@ def train_NLP_vectors(dataframe,
   else:
     result = dataframe.copy()
 
+  if feature_size <= 0:
+        pre_feature_size = math.floor(result['raw_word_count'].mean())
+        feature_size = math.floor(result['pp_word_count'].mean())
+        print("Using average word count per pre-filtered review: " + str(pre_feature_size))
+        print("Using average word count per filtered review: " + str(feature_size))
 
   if verbose is True:
       print("\nAlgo used: " + algorithm)
@@ -448,7 +453,7 @@ def train_NLP_vectors(dataframe,
   start_time = time.time()
 
   w2v_model = Word2Vec(sentences = preproc_data,
-                    min_count=min_count,
+                   min_count=min_count,
                    vector_size=feature_size,
                    window=window,
                    alpha=learning_rate,
