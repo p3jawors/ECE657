@@ -69,7 +69,7 @@ if __name__ == "__main__":
 
         #model = Doc2Vec.load(os.path.join(os.getcwd(), 'always fail'))
         print("Bag of Words found!")
-
+        model = model.wv
     except IOError:
         #Using params from tutorial will fine tune with grid search after
         min_count = 7
