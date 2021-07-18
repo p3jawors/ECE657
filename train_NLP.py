@@ -8,6 +8,7 @@ import os
 
 from gensim.test.utils import common_texts
 from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 from gensim.models import Doc2Vec
 
 from keras.datasets import cifar10
@@ -28,16 +29,21 @@ if __name__ == "__main__":
     # NOTE: uncomment to generate train/test split
     # utils.generate_NLP_train_test_split(verbose=verbose)
 
+    #Set this to either CBOW/SG for continous bag of words or Skip-o-gram for generating model
+    # as well as our test and train sets before going training
+    algorithm = "cbow"
 
     try:
-        print("attempting to find previously trained preprocessing")
-        #train_data = pd.read_csv(os.path.join(os.getcwd(), 'Does not exist')) #Use for testing
+        print("Attempting to find previously trained preprocessing")
+        #train_data = pd.read_pickle(os.path.join(os.getcwd(), 'Does not exist')) #Use for testing
 
-        train_data = pd.read_csv(os.path.join(os.getcwd(), 'data/NLP_train_Preproc.csv'))
+        train_data = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_train_Preproc.pickle'))
+        #train_data.LABELS = train_data.LABELS.apply(ast.literal_eval)
         print("DATA FOUND YEEEE BOII")
         print(train_data)
 
-        test_data = pd.read_csv(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.csv'))
+        test_data = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.pickle'))
+        #test_data.LABELS = test_data.LABELS.apply(ast.literal_eval)
         print("Boyakasha! Test Data too bro!")
         print(test_data)
 
@@ -52,20 +58,21 @@ if __name__ == "__main__":
         train_data, test_data = utils.preprocess_NLP_data(raw_train_data, raw_test_data, verbose=False)
 
         #Save preprocessed data to save time between runs/tuning (~2 min per run)
-        train_data.to_csv(os.path.join(os.getcwd(), 'data/NLP_train_Preproc.csv'))
-        test_data.to_csv(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.csv'))
+        train_data.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train_Preproc.pickle'))
+        test_data.to_pickle(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.pickle'))
 
     # 2. Train your emedding using word2vec
     # Continous bag of words model
     try:
-        print("attempting to find previous trained CBOW models")
-        #model_cbow = Word2Vec.load(os.path.join(os.getcwd(), 'models/cbow_model.blob')) #uncomment for production
-        model_cbow = Doc2Vec.load(os.path.join(os.getcwd(), 'always fail'))
+        print("Attempting to find previous trained "+ algorithm +" model")
+        model = KeyedVectors.load(os.path.join(os.getcwd(), 'models/' + algorithm + '_model.blob')) #uncomment for production
+
+        #model = Doc2Vec.load(os.path.join(os.getcwd(), 'always fail'))
         print("Bag of Words found!")
 
     except IOError:
         #Using params from tutorial will fine tune with grid search after
-        min_count = 10
+        min_count = 7
         learning_rate = 0.03
         min_learning_rate = 0.0007
         window = 2
@@ -73,52 +80,61 @@ if __name__ == "__main__":
         sample = 6e-5
         neg_samples = 20
 
-        model_cbow  = utils.train_NLP_embedding(train_data, test_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "CBOW",
+        model = utils.train_NLP_vectors(train_data, test_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, algorithm,
                                               random_seed, verbose)
 
-        print("No existing model found: Generating CBOW embedding model")
-        model_cbow.save(os.path.join(os.getcwd(), 'models/cbow_model.blob'))
+        print("No existing model found: Generating "+algorithm+ " embedding model")
+        model.save(os.path.join(os.getcwd(), 'models/'+ algorithm +'_model.blob'))
 
-    ##Skip o gram model
+    #Do some visualizations if we want
+    print("top 10 words")
+    utils.visualize_embeddings(model)
+
+    #3 Genterate proper embedded dataset using the new model prior to output training
+    #  This allows us to reuse previous iterations
     try:
-        print("Attempting to find previous trained Skip-o-=gram models")
-        #model_sg = Word2Vec.load(os.path.join(os.getcwd(), 'models/sg_model.blob')) #uncomment for production
-        model_sg = Doc2Vec.load(os.path.join(os.getcwd(), 'always fail'))
-        print("Skip-o-gram found!")
+        train_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_train'+algorithm+'.pickle'))
+        print("Train Data. FOUND YEEEE BOII")
+        print(train_embedded_df)
 
     except IOError:
-        print("No existing model found: Generating skip-o-gram embedding model")
-        #Using params from tutorial will fine tune with grid search after
-        min_count = 10
-        learning_rate = 0.03
-        min_learning_rate = 0.0007
-        window = 2
-        vec_size = 300
-        sample = 6e-5
-        neg_samples = 20
+        print("Generating vectorized training from dataframe")
+        print(train_data)
+        train_embedded_df = utils.embedd_dataset(train_data, model)
 
-        model_sg  = utils.train_NLP_embedding(train_data, test_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, "Skip-o-gram",
-                                              random_seed, verbose)
-        model_sg.save(os.path.join(os.getcwd(), 'models/sg_model.blob'))
+        if train_embedded_df is not None:
+            print("Resulting Train df")
+            print(train_embedded_df)
+            train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train'+algorithm+'.pickle'))
+            print("Reesult stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train'+algorithm+'.pickle')))
 
-    sg_embedded_df   = utils.visualize_embeddings(train_data, model_sg)
-    cbow_embedded_df = utils.visualize_embeddings(train_data, model_cbow)
-   # history = model.fit(
-   #         train_data,
-   #         train_labels,
-   #         epochs=n_epochs,
-   #         batch_size=batch_size,
-   #         validation_split=validation_split,
-   #         verbose=True)
+    #4 Embedd the test set as well then save to a file
+    # Allows us to streamline training after this is done the first time
+    try:
 
-   # utils.plot_training_results(
-   #         histories=[history],
-   #         cols=['r'],
-   #         labels=[model_name],
-   #         title='RNN Model Training')
+      test_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test'+algorithm+'.pickle'))
+      print("Train Data. FOUND YEEEE BOII")
+      print(test_embedded_df)
 
-   # 		Make sure to print your training loss within training to show progress
-   # 		Make sure you print the final training loss
+    except IOError:
 
-   # 3. Save your model
-   # model.save('models/nlp_embedding_model')
+        print("Generating vectorized test from dataframe")
+        print(test_data)
+        test_embedded_df = utils.embedd_dataset(test_data, model)
+
+        if test_embedded_df is not None:
+            print("Resulting Train df")
+            print(test_embedded_df)
+            test_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle'))
+            print("Result stored:" + str(os.path.join(os.getcwd(), 'data/NLP_test'+algorithm+'.pickle')))
+
+    #5 Train the output classifier
+    # Use a set of featature vectors applied to the original training set as well as the sentiment, and potentially other features
+    # (rating/Word count) to determine the potential output of the resulting sentiment of the review
+
+    # Use scikit learns classifier or roll our own output stage
+
+
+    #6 Visualize result of the training/performance of the final network
+
+

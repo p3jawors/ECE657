@@ -7,7 +7,9 @@ import pandas as pd
 import re
 import time
 
+from ast import literal_eval
 from tqdm.auto import tqdm
+from bs4 import BeautifulSoup
 
 from sklearn.model_selection import train_test_split
 
@@ -166,6 +168,7 @@ def dataset_2d_to_3d(dataset, verbose=True):
 def preprocess_NLP_data(train_dataframe,
                         test_dataframe=None,
                     options=['lowercase',
+                             'breaks',
                              'punctuation',
                              'tokenize',
                              'stopwords',
@@ -216,6 +219,18 @@ def preprocess_NLP_data(train_dataframe,
               preprocessed_df.at[index, col] = i[column].lower()
               if verbose is True:
                 print("\nlowercase: " + preprocessed_df.at[index, col]+ "\n")
+
+             #Remove breaks,
+            if 'breaks' in options:
+              soup = BeautifulSoup(preprocessed_df.at[index, col], features='lxml')
+              for breaks in soup.findAll("<br>"):
+                    breaks.extract()
+              for breaks in soup.findAll('</br>'):
+                    breaks.extract()
+              preprocessed_df.at[index, col] = soup.get_text()
+
+              if verbose is True:
+                print("\nbreaks: " + preprocessed_df.at[index, col]+ "\n")
 
 
             if 'punctuation' in options:
@@ -356,6 +371,7 @@ def load_NLP_data(path_to_data, verbose=True):
     return folder_paths[0][2], folder_paths[1][2]
 
 
+
 """
   Ingest the preprocessed dataframe into word2vec and perform CBOW and Skip-Agram to generate
   two embedding models, then use that for training our final classifier/network
@@ -382,7 +398,7 @@ def load_NLP_data(path_to_data, verbose=True):
   https://thedatafrog.com/en/articles/word-embedding-sentiment-analysis/
 
 """
-def train_NLP_embedding(dataframe,
+def train_NLP_vectors(dataframe,
                         test_dataframe,
                         feature_size,
                         window,
@@ -393,8 +409,9 @@ def train_NLP_embedding(dataframe,
                         algorithm,
                         rnd_seed,
                         verbose):
-
-  dict_algo = {"Skip-o-gram":1, "CBOW":0}
+  #cbow - continous bag of words
+  #sg - skip -o -gram
+  dict_algo = {"sg":1, "cbow":0}
 
 
   if test_dataframe is not None:
@@ -419,12 +436,18 @@ def train_NLP_embedding(dataframe,
       print("        Min_count:"+ str(min_count) +  " Neg Sample Rate: "+ str(negative_sample_rate) + "\n")
 
 
-
+  #We need all the help we can get
   cores = multiprocessing.cpu_count()
+  preproc_data = result['review'].values.tolist()
+
+  if verbose is True:
+     print("This is a sanity check")
+     print(preproc_data[:2])
 
   #Initialize model
   start_time = time.time()
-  model = Word2Vec(sentences = result['review'],
+
+  w2v_model = Word2Vec(sentences = preproc_data,
                     min_count=min_count,
                    vector_size=feature_size,
                    window=window,
@@ -434,25 +457,64 @@ def train_NLP_embedding(dataframe,
                    sg= dict_algo[algorithm],
                    workers=cores-1)
 
+  model = w2v_model.wv
   #build vocab of the model
-  print("Time taken to train model: " + str(time.time() - start_time))
-
+  if verbose is True:
+    print("Time taken to train model: " + str(time.time() - start_time))
+    print("Total words in model: "+ str(len(model.key_to_index)))
   return model
 
 
-def visualize_embeddings(dataframe, model):
+"""
+    Take in a model and then a dataframe, convert sentences in dataframe
+    to a vectorized set of data that can be used for training with sentiment
 
-  model.most_similar(positive=['love', 'awesome', 'great'], topn=5)
-  #train_embedded_dict = {'word':[], 'embedding vector':[]}
-  #for index, row in dataframe.iterrows():
-  #  for word in row['review']:
-  #    if word in model.wv.vocab:
-  #      if word not in train_embedded_dict['word']:
-  ##        train_embedded_dict['word'].append(word)
-  #        train_embedded_dict['embedding vector'].append(model.wv[word])
+    dataframe - pandas dataframe
+    model     - model (represented by gensims KeyedVectors)
+    verbise   - Turn on verbose commands
+
+    return a dataframe with a vectorized sentence and its overall sentiment
+"""
+def embedd_dataset(dataframe, model, verbose=True):
+
+  start_time = time.time()
+  # Embed training dataset words.
+  #embedded_dict = {'word':[], 'embedding vector':[]}
+  #for i in dataframe.itertuples():
+  #  column = 3
+  #  col = 'review'
+  #  index = i.Index
+  #  print(i[column])
+#
+ #   for word in :
+ #     if model.key_to_index[word] is not None:
+ #       if word not in train_embedded_dict['word']:
+ #         train_embedded_dict['word'].append(word)
+ #         train_embedded_dict['embedding vector'].append(model.get_vector(word, norm=True))
 
 
-  #train_embedded_df = pd.DataFrame(data=train_embedded_dict)
-  print(train_embedded_df)
+  #embedded_df = pd.DataFrame(data=train_embedded_dict)
+
+  print("Time taken to apply embedding to dataset: " + str(time.time() - start_time))
+
+  #if verbose is True:
+  #  print("Time taken to perform embedd vectors: " + str(time.time() - start_time))
+  #  print(embedded_df)
+
+"""
+ Look at stuff close to the given words
+ Also visualize stuff
+ https://towardsdatascience.com/a-beginners-guide-to-word-embedding-with-gensim-word2vec-model-5970fa56cc92
+"""
+def visualize_embeddings(model):
+    print("\nTop 10 related to bad")
+    print(model.most_similar("bad"))
+
+    print("\nTop 10 related to great\n")
+    print(model.most_similar("great"))
+
+    print("\nTop 10 related to ok\n")
+    print(model.most_similar("ok"))
 
 
+#
