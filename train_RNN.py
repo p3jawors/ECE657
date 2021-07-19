@@ -10,7 +10,6 @@ from keras.utils import to_categorical
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout, LSTM, BatchNormalization
 from keras.optimizers import Adam
-import keras_lmu
 from tensorflow import keras
 
 
@@ -97,41 +96,6 @@ def load_model(model_name, verbose=True, **kwargs):
 
 
 
-    elif model_name == 'vanilla_lmu':
-        model = Sequential()
-        lmu_layer = keras_lmu.LMU(
-            memory_d=kwargs['memory_d'],
-            order=kwargs['order'],
-            theta=kwargs['theta'],
-            hidden_cell=kwargs['hidden_cell'],
-            hidden_to_memory=kwargs['hidden_to_memory'],
-            memory_to_memory=kwargs['memory_to_memory'],
-            input_to_hidden=kwargs['input_to_hidden'],
-            dropout=kwargs['dropout']
-        )
-        model.add(lmu_layer)
-        model.add(Dense(1))
-        model.compile(optimizer='adam', loss='mse')
-
-    elif model_name == 'layered_lmu':
-        model = Sequential()
-        for ii in range(kwargs['n_layers']):
-            lmu_layer = keras_lmu.LMU(
-                memory_d=kwargs['memory_d'],
-                order=kwargs['order'],
-                theta=kwargs['theta'],
-                hidden_cell=kwargs['hidden_cell'],
-                # hidden_cell=tf.keras.layers.SimpleRNNCell(units=500),
-                hidden_to_memory=kwargs['hidden_to_memory'],
-                memory_to_memory=kwargs['memory_to_memory'],
-                input_to_hidden=kwargs['input_to_hidden'],
-                dropout=kwargs['dropout']
-            )
-            model.add(lmu_layer)
-        model.add(Dense(1))
-        model.compile(optimizer='adam', loss='mse')
- 
-
     else:
         raise Exception(f"{model_name} is not a valid model")
 
@@ -173,35 +137,6 @@ if __name__ == "__main__":
 
     model_name = 'layered_dropout_batchnorm_lstm'
     model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 50, 'n_layers': 4, 'dropout_rate': 0.2}
-
-    # model_name = 'vanilla_lmu'
-    # model_args = {
-    #         'memory_d': 16,
-    #         'order': 256,
-    #         'theta': np.prod(train_data.shape),
-    #         # 'hidden_cell': tf.keras.layers.SimpleRNNCell(units=10),
-    #         'hidden_cell': tf.keras.layers.SimpleRNNCell(units=50),
-    #         'hidden_to_memory': True,
-    #         'memory_to_memory': True,
-    #         'input_to_hidden': False,
-    #         'dropout': 0.2
-    #         }
-
-
-    # model_name = 'layered_lmu'
-    # model_args = {
-    #         'memory_d': 4,
-    #         'order': 256,
-    #         'theta': np.prod(train_data.shape),
-    #         # 'hidden_cell': tf.keras.layers.SimpleRNNCell(units=10),
-    #         'hidden_cell': tf.keras.layers.SimpleRNNCell(units=500),
-    #         'hidden_to_memory': True,
-    #         'memory_to_memory': False,
-    #         'input_to_hidden': False,
-    #         'dropout': 0.2,
-    #         'n_layers': 2
-    #         }
-
     model = load_model(model_name, verbose=verbose, **model_args)
 
     # 2. Train your network

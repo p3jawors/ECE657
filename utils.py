@@ -10,7 +10,7 @@ import math
 
 from ast import literal_eval
 from tqdm.auto import tqdm
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup
 
 from sklearn.model_selection import train_test_split
 
@@ -229,124 +229,120 @@ def dataset_2d_to_3d(dataset, verbose=True):
 
 
 
-def preprocess_NLP_data(train_dataframe,
-                        test_dataframe=None,
-                    options=['lowercase',
-                             'breaks',
-                             'punctuation',
-                             'tokenize',
-                             'stopwords',
-                             'stem'],
-                    stemmer='porter',
-                    language='english',
-                    verbose = True):
+def preprocess_NLP_data(
+        train_dataframe,
+        test_dataframe=None,
+        options=[
+            'lowercase',
+            'breaks',
+            'punctuation',
+            'tokenize',
+            'stopwords',
+            'stem'],
+        stemmer='porter',
+        language='english',
+        verbose = True):
 
-  nltk.download('punkt')
-  nltk.download('stopwords')
+    nltk.download('punkt')
+    nltk.download('stopwords')
 
-  if test_dataframe is not None:
-    print("Preprocessing both train and test sets")
-    data_to_proc = [train_dataframe, test_dataframe]
+    if test_dataframe is not None:
+        print("Preprocessing both train and test sets")
+        data_to_proc = [train_dataframe, test_dataframe]
 
-    row_range = len(train_dataframe)
-    print("Num Items to preproc:" +str(row_range))
-  else:
-    print("Preprocessing train set")
-    data_to_proc = [train_dataframe]
-    row_range = len(train_dataframe)
+        row_range = len(train_dataframe)
+        print("Num Items to preproc:" +str(row_range))
+    else:
+        print("Preprocessing train set")
+        data_to_proc = [train_dataframe]
+        row_range = len(train_dataframe)
 
+    if verbose is True:
+        print(preprocessed_df)
 
+    #Try different methods for stemming our words as part of prepcoessing
+    if stemmer == 'porter':
+        stemmer_obj = PorterStemmer()
+    elif stemmer == 'snowball':
+        stemmer_obj = SnowballStemmer()
+    elif stemmer == 'lancaster':
+        stemmer_obj = LancasterStemmer()
 
-  if verbose is True:
-    print(preprocessed_df)
+    for preprocessed_df in data_to_proc:
 
-   #Try different methods for stemming our words as part of prepcoessing
-  if stemmer == 'porter':
-    stemmer_obj = PorterStemmer()
-  elif stemmer == 'snowball':
-    stemmer_obj = SnowballStemmer()
-  elif stemmer == 'lancaster':
-    stemmer_obj = LancasterStemmer()
-
-  for preprocessed_df in data_to_proc:
-
-      print("Ingesting frame")
-      print(preprocessed_df)
-      with tqdm(total= row_range, disable = verbose) as pbar:
+        print("Ingesting frame")
+        print(preprocessed_df)
         for i in preprocessed_df.itertuples():
-            pbar.update(1)
             index = i.Index
             column = 2
             col = 'review'
 
             if 'lowercase' in options:
-              preprocessed_df.at[index, col] = i[column].lower()
-              if verbose is True:
-                print("\nlowercase: " + preprocessed_df.at[index, col]+ "\n")
+                preprocessed_df.at[index, col] = i[column].lower()
+                if verbose is True:
+                    print("\nlowercase: " + preprocessed_df.at[index, col]+ "\n")
 
-             #Remove breaks,
+                #Remove breaks,
             if 'breaks' in options:
-              soup = BeautifulSoup(preprocessed_df.at[index, col], features='lxml')
-              for breaks in soup.findAll("<br>"):
-                    breaks.extract()
-              for breaks in soup.findAll('</br>'):
-                    breaks.extract()
-              preprocessed_df.at[index, col] = soup.get_text()
+                remove_list = ['<br>', '</br>', '<br/>', '<br />']
+                soup = preprocessed_df.at[index, col]
+                for nn in remove_list:
+                    soup = soup.replace(nn, "")
+                preprocessed_df.at[index, col] = soup
 
-              if verbose is True:
-                print("\nbreaks: " + preprocessed_df.at[index, col]+ "\n")
+                if verbose is True:
+                    print("\nbreaks: " + preprocessed_df.at[index, col]+ "\n")
 
 
             if 'punctuation' in options:
-              preprocessed_df.at[index, col] = \
-              "".join([char for char in preprocessed_df.at[index, col]
-                       .encode('ascii','ignore')
-                       .decode() if char not in string.punctuation])
-              if verbose is True:
-                print("punctuation: " + preprocessed_df.at[index, col] + "\n")
+                preprocessed_df.at[index, col] = \
+                "".join([char for char in preprocessed_df.at[index, col]
+                        .encode('ascii','ignore')
+                        .decode() if char not in string.punctuation])
+                if verbose is True:
+                    print("punctuation: " + preprocessed_df.at[index, col] + "\n")
 
 
             if 'tokenize' in options:
-              preprocessed_df.at[index, col] = \
-              nltk.word_tokenize(preprocessed_df.at[index, col])
+                preprocessed_df.at[index, col] = \
+                nltk.word_tokenize(preprocessed_df.at[index, col])
 
-              preprocessed_df.at[index, 'raw_word_count'] = len(preprocessed_df.at[index, col])
-              if verbose is True:
-                print("tokenized: " + str(preprocessed_df.at[index, col]) + "\n" )
+                preprocessed_df.at[index, 'raw_word_count'] = len(preprocessed_df.at[index, col])
+                if verbose is True:
+                    print("tokenized: " + str(preprocessed_df.at[index, col]) + "\n" )
 
 
             if 'stopwords' in options:
-              stop_words = stopwords.words(language)
-              preprocessed_df.at[index, col] = \
-              [word for word in preprocessed_df.at[index, col] if word not in stop_words]
+                stop_words = stopwords.words(language)
+                preprocessed_df.at[index, col] = \
+                [word for word in preprocessed_df.at[index, col] if word not in stop_words]
 
-              #track how many words we removed
-              preprocessed_df.at[index, 'pp_word_count'] = len(preprocessed_df.at[index, col])
-              if verbose is True:
-                print("stopwords: " + str(preprocessed_df.at[index, col]) + "\n")
+                #track how many words we removed
+                preprocessed_df.at[index, 'pp_word_count'] = len(preprocessed_df.at[index, col])
+                if verbose is True:
+                    print("stopwords: " + str(preprocessed_df.at[index, col]) + "\n")
 
 
             if 'stem' in options:
-              preprocessed_df.at[index, col] = \
-              [stemmer_obj.stem(word) for word in preprocessed_df.at[index, col]]
-              if verbose is True:
-                print("stemming: " + str(preprocessed_df.at[index, col]) + "\n")
+                preprocessed_df.at[index, col] = \
+                [stemmer_obj.stem(word) for word in preprocessed_df.at[index, col]]
+                if verbose is True:
+                    print("stemming: " + str(preprocessed_df.at[index, col]) + "\n")
 
 
-      if verbose is True:
+    if verbose is True:
         print(preprocessed_df)
 
-      pbar.close()
 
-  if test_dataframe is not None:
-      print("Train Dataframe")
-      print(train_dataframe)
-      print("Test Dataframe")
-      print(train_dataframe)
-      return train_dataframe, test_dataframe
-  else:
-      print(train_dataframe)
-      return train_dataframe
+    if test_dataframe is not None:
+        print("Train Dataframe")
+        print(train_dataframe)
+        print("Test Dataframe")
+        print(train_dataframe)
+        return train_dataframe, test_dataframe
+    else:
+        print(train_dataframe)
+        return train_dataframe
 
 
 #File data is distributed into folders in a gross way.
