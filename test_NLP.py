@@ -1,10 +1,24 @@
 # import required packages
 import utils
+import os
+import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import pandas as pd
+
+from sklearn.linear_model import SGDClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import train_test_split
+
+from gensim.test.utils import common_texts
+from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
+from gensim.models import Doc2Vec
+
 
 from tensorflow import keras
+from keras.preprocessing.sequence import pad_sequences
 
 
 
@@ -18,15 +32,18 @@ if __name__ == "__main__":
 
     # 1. Load your saved model
     try:
-
-    sentiment_model.read_pickle(os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), compression='gzip')
+        # sentiment_model.read_pickle(os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), compression='gzip')
+        sentiment_model = pickle.load(open(
+            os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), 'rb'
+            )
+        )
 
         # 2. Load your testing data
         try:
             print("attempting to find previously preproceed test set")
             test_data = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.pickle'))
             print("DATA FOUND YEEEE BOII")
-            print(train_data)
+            print(test_data)
         except IOError:
             raw_test_data = utils.load_NLP_test_data('data/aclImdb/test/', verbose=False)
 
@@ -63,8 +80,10 @@ if __name__ == "__main__":
 
 
 
+        # pad test data with zeros
+        test_embedded_df = pad_sequences(test_embedded_df, padding='post')
         # 3. Run prediction on the test data and print the test accuracy
-        score = model.evaluate(test_data, test_labels, batch_size=1, verbose=True)
+        score = model.evaluate(test_embedded_df, test_labels, batch_size=1, verbose=True)
 
         scores = []
         predictions = []

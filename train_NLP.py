@@ -6,6 +6,8 @@ import tensorflow as tf
 import pandas as pd
 import os
 import gzip
+import timeit
+import pickle
 
 from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
@@ -33,14 +35,14 @@ from tensorflow import keras
 def train_classifier(dataframe, random_seed):
 
     x_train = dataframe['vector_sentence']
-    # print('no pad: ', x_train[0])
     x_train = pad_sequences(x_train, padding='post')
-    # print('pad: ', x_train[0])
     x_train = x_train.reshape(x_train.shape[0], np.prod(x_train.shape[1:]))
     y_train = dataframe['sentiment'].to_list()
-    print('X_TRAIN: ', np.asarray(x_train).shape)
     logRClassifier = SGDClassifier(loss='log', penalty='l1')
+    print('Running Fit...')
+    start = timeit.default_timer()
     logRClassifier.fit(x_train, y_train)
+    print('Run time: ', timeit.default_timer() - start)
 
     return logRClassifier
 
@@ -133,14 +135,18 @@ if __name__ == "__main__":
 
         if train_embedded_df is not None:
             train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle.gz'), compression='gzip')
-            print("Reesult stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle')))
+            print("Result stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle')))
 
 
     #5 Train the output classifier
     # Use a set of featature vectors applied to the original training set as well as the sentiment, and potentially other features
     # (rating/Word count) to determine the potential output of the resulting sentiment of the review
     sentiment_model = train_classifier(train_embedded_df, random_seed)
-    sentiment_model.to_pickle(os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), compression='gzip')
+    pickle.dump(
+        sentiment_model,
+        open(os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), 'wb'
+        )
+    )
 
 
     #6 Visualize result of the training/performance of the final network

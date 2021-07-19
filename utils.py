@@ -15,6 +15,7 @@ from ast import literal_eval
 from sklearn.model_selection import train_test_split
 from gensim.test.utils import common_texts
 from gensim.models import Word2Vec
+from keras.preprocessing.sequence import pad_sequences
 
 from nltk import word_tokenize
 from nltk.corpus import stopwords
@@ -621,13 +622,16 @@ def embedd_dataset(dataframe, model, verbose=True):
 
   embedded_df = pd.DataFrame(data=embedded_dict)
 
-  #Shuffle this for training 
+  #Shuffle this for training
   embedded_df = embedded_df.sample(frac=1).reset_index(drop=True)
   print("Time taken to apply embedding to dataset: " + str(time.time() - start_time))
 
   if verbose is True:
     print("Resulting Frame")
     print(embedded_df)
+
+  # # pad to zeroes
+  # embedded_df = pad_sequences(embedded_df, padding='post')
 
   return embedded_df
 
