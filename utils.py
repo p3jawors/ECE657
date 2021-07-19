@@ -595,6 +595,7 @@ def embedd_dataset(dataframe, model, verbose=True):
   embedded_dict = {'vector_sentence':[], 'sentiment':[]}
 
   print('Embedding dataset as vectors')
+  # max_review_len = np.max(dataframe.pp_word_count)
   for row in dataframe.itertuples():
     index = row.Index
 
@@ -605,10 +606,18 @@ def embedd_dataset(dataframe, model, verbose=True):
 
     for word in word_list:
         if word in model.key_to_index:
-           vectorized_list.append(model.get_vector(word, norm=True).tolist())
+           # vectorized_list.append(model.get_vector(word, norm=True).tolist())
+           vectorized_list.append(model.get_vector(word, norm=True))
 
-    embedded_dict['vector_sentence'].append(vectorized_list)
-    embedded_dict['sentiment'].append(sentiment)
+    # current_len = len(vectorized_list)
+    #
+    # if current_len < max_review_len:
+    #     feature_shape = len(vectorized_list[0])
+    #     for ii in range(0, max_review_len-current_len):
+    #         vectorized_list.append([0]*feature_shape)
+
+    embedded_dict['vector_sentence'].append(np.asarray(vectorized_list))
+    embedded_dict['sentiment'].append(np.asarray(sentiment))
 
   embedded_df = pd.DataFrame(data=embedded_dict)
 

@@ -21,6 +21,7 @@ from tensorflow.keras.utils import to_categorical
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout, LSTM
 from keras.optimizers import Adam
+from keras.preprocessing.sequence import pad_sequences
 from tensorflow import keras
 
 
@@ -31,8 +32,13 @@ from tensorflow import keras
 """
 def train_classifier(dataframe, random_seed):
 
-    x_train = dataframe['vector_sentence'].to_list()
+    x_train = dataframe['vector_sentence']
+    # print('no pad: ', x_train[0])
+    x_train = pad_sequences(x_train, padding='post')
+    # print('pad: ', x_train[0])
+    x_train = x_train.reshape(x_train.shape[0], np.prod(x_train.shape[1:]))
     y_train = dataframe['sentiment'].to_list()
+    print('X_TRAIN: ', np.asarray(x_train).shape)
     logRClassifier = SGDClassifier(loss='log', penalty='l1')
     logRClassifier.fit(x_train, y_train)
 
