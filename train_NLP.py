@@ -107,7 +107,7 @@ if __name__ == "__main__":
         sample = 6e-5
         neg_samples = 20
 
-        model = utils.train_NLP_vectors(train_data, test_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, algorithm,
+        model, max_sentence_len = utils.train_NLP_vectors(train_data, test_data, vec_size, window, learning_rate, min_learning_rate, min_count, neg_samples, algorithm,
                                               random_seed, verbose)
 
         print("No existing model found: Generating "+algorithm+ " embedding model")
@@ -132,10 +132,15 @@ if __name__ == "__main__":
         print("Generating vectorized training from dataframe")
         print(train_data)
         train_embedded_df = utils.embedd_dataset(train_data, model)
+        test_embedded_df = utils.embedd_dataset(test_data, model)
 
         if train_embedded_df is not None:
             train_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle.gz'), compression='gzip')
             print("Result stored:" + str(os.path.join(os.getcwd(), 'data/NLP_train_'+algorithm+'embedd.pickle')))
+
+        if test_embedded_df is not None:
+            test_embedded_df.to_pickle(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'embedd.pickle.gz'), compression='gzip')
+            print("Result stored:" + str(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'embedd.pickle')))
 
 
     #5 Train the output classifier

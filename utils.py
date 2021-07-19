@@ -541,6 +541,7 @@ def train_NLP_vectors(dataframe,
   if feature_size <= 0:
         pre_feature_size = math.floor(result['raw_word_count'].mean())
         feature_size = math.floor(result['pp_word_count'].mean())
+        max_sentence_len = result['pp_word_count'].max()
         print("Using average word count per pre-filtered review: " + str(pre_feature_size))
         print("Using average word count per filtered review: " + str(feature_size))
 
@@ -576,7 +577,7 @@ def train_NLP_vectors(dataframe,
   if verbose is True:
     print("Time taken to train model: " + str(time.time() - start_time))
     print("Total words in model: "+ str(len(model.key_to_index)))
-  return model
+  return model, max_sentence_len
 
 
 """
