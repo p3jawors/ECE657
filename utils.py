@@ -594,6 +594,7 @@ def embedd_dataset(dataframe, model, verbose=True):
   # Embed training dataset words.
   embedded_dict = {'vector_sentence':[], 'sentiment':[]}
 
+  print('Embedding dataset as vectors')
   for row in dataframe.itertuples():
     index = row.Index
 
@@ -604,7 +605,7 @@ def embedd_dataset(dataframe, model, verbose=True):
 
     for word in word_list:
         if word in model.key_to_index:
-           vectorized_list.append(model.get_vector(word, norm=True))
+           vectorized_list.append(model.get_vector(word, norm=True).tolist())
 
     embedded_dict['vector_sentence'].append(vectorized_list)
     embedded_dict['sentiment'].append(sentiment)
