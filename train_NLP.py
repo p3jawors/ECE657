@@ -21,7 +21,7 @@ from gensim.models import Doc2Vec
 from keras.datasets import cifar10
 from tensorflow.keras.utils import to_categorical
 from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout, LSTM
+from keras.layers import Conv2D, MaxPooling2D, Dense, Flatten, Dropout, LSTM, BatchNormalization
 from keras.optimizers import Adam
 from keras.preprocessing.sequence import pad_sequences
 from tensorflow import keras
@@ -37,11 +37,39 @@ def train_classifier(dataframe, random_seed):
     x_train = dataframe['vector_sentence']
     x_train = pad_sequences(x_train, padding='post')
     x_train = x_train.reshape(x_train.shape[0], np.prod(x_train.shape[1:]))
-    y_train = dataframe['sentiment'].to_list()
-    logRClassifier = SGDClassifier(loss='log', penalty='l1')
+    # y_train = dataframe['sentiment'].to_list()
+    y_train = dataframe['sentiment']
+    x_train = np.asarray(x_train).astype('float32')
+    y_train = np.asarray(y_train).astype('float32')
+    print("X TRAIN: ", x_train.shape)
+
+    model = Sequential()
+    model.add(BatchNormalization())
+    model.add(LSTM(500, activation='relu', input_shape=(x_train.shape)))
+    model.add(Dropout(0.2))
+    model.add(Dense(1))
+    model.compile(optimizer='adam', loss='mse')
+
     print('Running Fit...')
     start = timeit.default_timer()
-    logRClassifier.fit(x_train, y_train)
+    history = model.fit(
+            x_train,
+            y_train,
+            epochs=100,
+            batch_size=32,
+            validation_split=0.2,
+            verbose=True)
+
+    utils.plot_training_results(
+            histories=[history],
+            cols=['r'],
+            labels=[model_name],
+            title='NLP Model Training: batchnorm_dropout_lstm')
+
+
+    # logRClassifier = SGDClassifier(loss='log', penalty='l1')
+    # print('Running Fit...')
+    # logRClassifier.fit(x_train, y_train)
     print('Run time: ', timeit.default_timer() - start)
 
     return logRClassifier
