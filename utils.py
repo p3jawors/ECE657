@@ -278,7 +278,9 @@ def preprocess_NLP_data(
 
                 #Remove breaks,
             if 'breaks' in options:
-                remove_list = ['<br>', '</br>', '<br/>', '<br />']
+                remove_list = ['<br>', '</br>', '<br/>', '<br />', '</p>', '<p>', '<th>', \
+                               '</th>', '<tr>', '</tr>', '<dt>', '</dt>', '<dd>', '</dd>', \
+                                '<em>', '</em>']
                 soup = preprocessed_df.at[index, col]
                 for nn in remove_list:
                     soup = soup.replace(nn, "")
