@@ -36,7 +36,7 @@ def train_classifier(dataframe, random_seed):
 
     x_train = dataframe['vector_sentence']
     x_train = pad_sequences(x_train, padding='post')
-    x_train = x_train.reshape(x_train.shape[0], np.prod(x_train.shape[1:]))
+    # x_train = x_train.reshape(x_train.shape[0], np.prod(x_train.shape[1:]))
     # y_train = dataframe['sentiment'].to_list()
     y_train = dataframe['sentiment']
     x_train = np.asarray(x_train).astype('float32')
