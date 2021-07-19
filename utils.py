@@ -250,8 +250,8 @@ def preprocess_NLP_data(
         data_to_proc = [train_dataframe]
         row_range = len(train_dataframe)
 
-    if verbose is True:
-        print(preprocessed_df)
+    # if verbose is True:
+    #     print(preprocessed_df)
 
     #Try different methods for stemming our words as part of prepcoessing
     if stemmer == 'porter':
@@ -261,17 +261,17 @@ def preprocess_NLP_data(
     elif stemmer == 'lancaster':
         stemmer_obj = LancasterStemmer()
 
-    for preprocessed_df in data_to_proc:
-
-        print("Ingesting frame")
+    for ii, preprocessed_df in enumerate(data_to_proc):
+        print(f"Preprocessing dataset {(ii+1)}/{len(data_to_proc)}")
         print(preprocessed_df)
-        for i in preprocessed_df.itertuples():
-            index = i.Index
+        for jj, entry in enumerate(preprocessed_df.itertuples()):
+            print(f"Entry {jj}", end='\r')
+            index = entry.Index
             column = 2
             col = 'review'
 
             if 'lowercase' in options:
-                preprocessed_df.at[index, col] = i[column].lower()
+                preprocessed_df.at[index, col] = entry[column].lower()
                 if verbose is True:
                     print("\nlowercase: " + preprocessed_df.at[index, col]+ "\n")
 
@@ -281,7 +281,7 @@ def preprocess_NLP_data(
                 soup = preprocessed_df.at[index, col]
                 for nn in remove_list:
                     soup = soup.replace(nn, "")
-                preprocessed_df.at[index, col] = soup
+                preprocessed_df.at[index, col] = str(soup)
 
                 if verbose is True:
                     print("\nbreaks: " + preprocessed_df.at[index, col]+ "\n")
