@@ -89,7 +89,7 @@ def train_classifier(dataframe, random_seed):
     # model.add(Dense(128, activation='softmax'))
     # model.add(Dropout(0.4))
     # model.add(Dense(1, activation='sigmoid'))
-    model.add(Dense(2))#, activation='softmax'))
+    model.add(Dense(2, activation='softmax'))
     model.compile(optimizer='adam', loss='mse')
     # model.compile(optimizer='adam', loss='categorical_crossentropy')
 
@@ -98,7 +98,7 @@ def train_classifier(dataframe, random_seed):
     history = model.fit(
             x_train,
             y_train,
-            epochs=5,
+            epochs=3,
             batch_size=8,
             validation_split=0.2,
             verbose=True)
