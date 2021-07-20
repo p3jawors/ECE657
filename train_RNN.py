@@ -136,11 +136,11 @@ if __name__ == "__main__":
     # model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 50, 'n_layers': 4, 'dropout_rate': 0.2}
 
     model_name = 'layered_dropout_batchnorm_lstm'
-    model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 50, 'n_layers': 4, 'dropout_rate': 0.2}
+    model_args = {'input_shape': train_data.shape[1:], 'n_neurons': 150, 'n_layers': 6, 'dropout_rate': 0.2}
     model = load_model(model_name, verbose=verbose, **model_args)
 
     # 2. Train your network
-    n_epochs = 1000
+    n_epochs = 150
     batch_size = 32
     validation_split = 0.2
     if verbose:

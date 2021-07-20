@@ -29,21 +29,24 @@ from keras.preprocessing.sequence import pad_sequences
 
 if __name__ == "__main__":
     verbose=True
+    # algorithm = "sg"
     algorithm = "cbow"
 
     # 1. Load your saved model
     # try:
     # sentiment_model.read_pickle(os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), compression='gzip')
-    sentiment_model = pickle.load(open(
-        os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), 'rb'
-        )
-    )
+    # sentiment_model = pickle.load(open(
+    #     os.path.join(os.getcwd(), 'models/NLP_sentiment_classifier_'+algorithm+'.pickle'), 'rb'
+    #     )
+    # )
+
+    sentiment_model = keras.models.load_model('models/NLP_model')
 
         # # 2. Load your testing data
         # try:
     print("attempting to find previously preproceed test set")
     test_data = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test_Preproc.pickle'))
-    print("DATA FOUND YEEEE BOII")
+    print("Previous test data found")
     print(test_data)
         # except IOError:
         #     raw_test_data = utils.load_NLP_test_data('data/aclImdb/test/', verbose=False)
@@ -67,7 +70,7 @@ if __name__ == "__main__":
     test_embedded_df = pd.read_pickle(g_data)
     g_data.close()
     # test_embedded_df = pd.read_pickle(os.path.join(os.getcwd(), 'data/NLP_test_'+algorithm+'.pickle'))
-    print("Test Data. FOUND YEEEE BOII")
+    print("Test Data")
     print(test_embedded_df)
 
     del test_data
@@ -89,14 +92,21 @@ if __name__ == "__main__":
     print(test_embedded_df)
     print(type(test_embedded_df))
     x_test = test_embedded_df['vector_sentence']
-    print('shape1: ', x_test.shape)
+    # print('shape1: ', x_test.shape)
     x_test = pad_sequences(x_test, padding='post')
-    print('shape2: ', x_test.shape)
+    # print('shape2: ', x_test.shape)
     x_test.resize(x_test.shape[0], 1383, x_test.shape[2])
+    x_test = np.asarray(x_test).astype('float32')
     print('shape3: ', x_test.shape)
-    x_test = x_test.reshape(x_test.shape[0], np.prod(x_test.shape[1:]))
-    print('shape4: ', x_test.shape)
+    # x_test = x_test.reshape(x_test.shape[0], np.prod(x_test.shape[1:]))
+    # print('shape4: ', x_test.shape)
     y_test = test_embedded_df['sentiment']
+    y_test = y_test.to_numpy()
+    new_y = []
+    for y in y_test:
+        new_y.append(y)
+    y_test = np.asarray(new_y)
+    y_test = np.asarray(y_test).astype('float32')
     # 3. Run prediction on the test data and print the test accuracy
 
     # scores = sentiment_model.score(x_test, y_test)
@@ -110,8 +120,10 @@ if __name__ == "__main__":
     plt.figure()
     # plt.subplot(211)
     plt.title('NLP Test Predictions')
+    # plt.scatter(np.arange(0, len(y_test)), y_test[0], label='ground truth')
+    # plt.scatter(np.arange(0, len(y_test)), y_test[1], label='ground truth')
+    plt.plot(y_test)
     plt.plot(np.squeeze(predictions), label='predicitons')
-    # plt.plot(y_test, label='ground truth')
     plt.legend()
     # plt.subplot(212)
     # plt.title('NLP Prediction Difference')
