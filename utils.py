@@ -278,11 +278,16 @@ def preprocess_NLP_data(
 
                 #Remove breaks,
             if 'breaks' in options:
-                remove_list = ['<br>', '</br>', '<br/>', '<br />']
-                soup = preprocessed_df.at[index, col]
-                for nn in remove_list:
-                    soup = soup.replace(nn, "")
-                preprocessed_df.at[index, col] = str(soup)
+                cleaner = re.compile('<.*?>')
+                cleantext = re.sub(cleaner, '', preprocessed_df.at[index, col])
+                preprocessed_df.at[index, col] = cleantext
+
+
+                # remove_list = ['<br>', '</br>', '<br/>', '<br />']
+                # soup = preprocessed_df.at[index, col]
+                # for nn in remove_list:
+                #     soup = soup.replace(nn, "")
+                # preprocessed_df.at[index, col] = str(soup)
 
                 if verbose is True:
                     print("\nbreaks: " + preprocessed_df.at[index, col]+ "\n")
@@ -375,7 +380,7 @@ def load_all_NLP_data(path_to_data, verbose=True):
 
     #Churn through all our datasamples to make this blob for embedding
 
-    list_of_paths = [[path_to_pos, 1], [path_to_neg, 0]]
+    list_of_paths = [[path_to_pos, [1, 0]], [path_to_neg, [0, 1]]]
     for folder in folder_paths:
 
         if verbose is True:
@@ -387,6 +392,7 @@ def load_all_NLP_data(path_to_data, verbose=True):
             if verbose is True:
                 print("path: "+ target_path[0])
 
+            # sentiments = []
             for filename in os.listdir(abs_path):
                 split_filename = re.split('_|\.txt', filename)
 
@@ -397,6 +403,7 @@ def load_all_NLP_data(path_to_data, verbose=True):
                 folder[1]['rating'].append(rating)
                 #encode sentiment based on data using
                 folder[1]['sentiment'].append(target_path[1])
+                # sentiments.append(target_path[1])
 
                 #pre/post processing statistics placeholders
                 folder[1]['raw_word_count'].append(0)
@@ -407,6 +414,8 @@ def load_all_NLP_data(path_to_data, verbose=True):
                     folder[1]['review'].append(text_string)
                     if verbose is True:
                         print("Extracted " + folder[0] + target_path[0] + filename)
+
+            # folder[1]['sentiment'] = sentiments
 
         dataframe = pd.DataFrame(data=folder[1])
         folder.append(dataframe)
@@ -440,7 +449,7 @@ def load_NLP_test_data(path_to_data, verbose=True):
 
     folder = [path_to_data+path_to_test_folder, test_data_raw_dict]
 
-    list_of_paths = [[path_to_pos, 1], [path_to_neg, 0]]
+    list_of_paths = [[path_to_pos, [1, 0]], [path_to_neg, [0, 1]]]
     if verbose is True:
        print("Target Folder: "+ folder[0])
 

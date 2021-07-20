@@ -47,8 +47,9 @@ if __name__ == "__main__":
     plt.legend()
     plt.subplot(212)
     plt.title('RNN Prediction Difference')
-    plt.plot(np.squeeze(scores))
+    plt.plot(np.squeeze(scores), label='Avg: %.2f' % np.mean(scores))
     plt.legend()
+    plt.tight_layout()
     plt.savefig('Q2_RNN-test.png')
     plt.show()
 
