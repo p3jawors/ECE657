@@ -103,7 +103,7 @@ def train_classifier(dataframe, random_seed):
             validation_split=0.2,
             verbose=True)
 
-    model.save('models/NLP_model%s')
+    model.save('models/NLP_model')
 
     utils.plot_training_results(
             histories=[history],
